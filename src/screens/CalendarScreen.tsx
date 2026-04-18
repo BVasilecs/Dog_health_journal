@@ -4,7 +4,7 @@ import { getDayStatus, statusBg, statusColor, statusEmoji, statusLabel, getEntry
 import { BRISTOL_DESCRIPTIONS, STOOL_COLORS } from '../types'
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
-  getDay, addMonths, subMonths, parseISO, isSameDay, isToday
+  getDay, addMonths, subMonths, parseISO, isToday
 } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
@@ -95,7 +95,7 @@ export default function CalendarScreen() {
             ))}
 
             {days.map(day => {
-              const dateStr = day.toISOString().split('T')[0]
+              const dateStr = format(day, 'yyyy-MM-dd')
               const status = getDayStatus(dateStr, state.entries)
               const today = isToday(day)
               const selected = selectedDate === dateStr

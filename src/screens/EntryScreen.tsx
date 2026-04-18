@@ -5,6 +5,23 @@ import { DiaryEntry, StoolWalk, BRISTOL_DESCRIPTIONS, STOOL_COLORS, WALK_LABELS 
 import { format, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
+function nowTime() {
+  const n = new Date()
+  return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`
+}
+
+function NowBtn({ onSet }: { onSet: (t: string) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSet(nowTime())}
+      className="text-[10px] font-label font-semibold text-primary bg-primary-fixed px-2 py-0.5 rounded-full hover:bg-primary-fixed-dim transition-colors active:scale-95 whitespace-nowrap"
+    >
+      Сейчас
+    </button>
+  )
+}
+
 // ── Walk sub-form ──────────────────────────────────────────────────────────
 
 function WalkSection({
@@ -23,18 +40,21 @@ function WalkSection({
   }
 
   return (
-    <div className={`rounded-xl overflow-hidden transition-all ${walk.occurred ? 'bg-surface-container-lowest shadow-card' : 'bg-surface-container-low'}`}>
+    <div className={`rounded-2xl overflow-hidden transition-all ${walk.occurred ? 'bg-surface-container-lowest shadow-card' : 'bg-surface-container-low'}`}>
       {/* Walk header */}
       <div className="flex items-center gap-3 p-4">
         <span className="text-2xl select-none">{meta.icon}</span>
         <div className="flex-1">
           <p className="font-label font-semibold text-sm text-on-surface">{meta.label}</p>
-          <input
-            type="time"
-            value={walk.time}
-            onChange={e => patch('time', e.target.value)}
-            className="bg-transparent font-label text-xs text-on-surface-variant focus:outline-none mt-0.5"
-          />
+          <div className="flex items-center gap-2 mt-0.5">
+            <input
+              type="time"
+              value={walk.time}
+              onChange={e => patch('time', e.target.value)}
+              className="bg-transparent font-label text-xs text-on-surface-variant focus:outline-none"
+            />
+            <NowBtn onSet={t => patch('time', t)} />
+          </div>
         </div>
         {/* Occurred toggle */}
         <div className="flex items-center gap-2">
@@ -78,7 +98,7 @@ function WalkSection({
           {/* Color selector */}
           <div className="flex flex-col gap-2">
             <p className="font-label text-[10px] font-semibold text-secondary uppercase tracking-wide">Цвет</p>
-            <div className="flex gap-3 items-center flex-wrap">
+            <div className="flex justify-between items-end w-full">
               {(Object.entries(STOOL_COLORS) as [keyof typeof STOOL_COLORS, { hex: string; label: string }][]).map(([key, { hex, label }]) => {
                 const selected = walk.color === key
                 return (
@@ -241,7 +261,7 @@ export default function EntryScreen() {
         <div className="px-4 pt-4 pb-6 flex flex-col gap-5 max-w-lg mx-auto">
 
           {/* Date / Time row */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <label className="font-label text-sm text-on-surface-variant">Время записи:</label>
             <input
               type="time"
@@ -249,6 +269,7 @@ export default function EntryScreen() {
               onChange={e => patch('time', e.target.value)}
               className="bg-surface-container-lowest px-4 py-2 rounded-full font-label text-sm text-primary font-medium shadow-card focus:outline-none focus:ring-2 focus:ring-primary-fixed"
             />
+            <NowBtn onSet={t => patch('time', t)} />
           </div>
 
           {/* ════ STOMACH ════ */}
@@ -297,12 +318,15 @@ export default function EntryScreen() {
                   {form.food[fedKey] && <span className="material-symbols-outlined text-[14px] text-on-primary icon-fill">check</span>}
                 </button>
                 <span className="font-label font-medium text-on-surface flex-1">{label}</span>
-                <input
-                  type="time"
-                  value={form.food[timeKey] as string}
-                  onChange={e => patchFood(timeKey, e.target.value)}
-                  className="bg-surface-container-low px-3 py-1.5 rounded-full font-label text-sm text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary-fixed"
-                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="time"
+                    value={form.food[timeKey] as string}
+                    onChange={e => patchFood(timeKey, e.target.value)}
+                    className="bg-surface-container-low px-3 py-1.5 rounded-full font-label text-sm text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary-fixed"
+                  />
+                  <NowBtn onSet={t => patchFood(timeKey, t)} />
+                </div>
               </div>
             ))}
             <div className="flex items-center justify-between bg-secondary-fixed/30 p-4 rounded-xl mt-1">
