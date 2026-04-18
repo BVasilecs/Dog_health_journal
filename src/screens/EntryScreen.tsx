@@ -174,7 +174,8 @@ export default function EntryScreen() {
 
   const [form, setForm] = useState<DiaryEntry>(() => existing ?? buildBlankEntry(date))
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLInputElement>(null)
+  const galleryRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const e = getEntryForDate(date)
@@ -377,10 +378,13 @@ export default function EntryScreen() {
           {/* ════ PHOTO ════ */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
             <h2 className="font-headline text-lg font-bold text-primary">📸 Фото</h2>
-            <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
+            {/* Camera input */}
+            <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
+            {/* Gallery input — no capture attribute so iOS shows the full picker */}
+            <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
             {form.photoBase64 ? (
               <div className="relative">
-                <img src={form.photoBase64} alt="Фото" className="w-full rounded-xl object-cover max-h-64" />
+                <img src={form.photoBase64} alt="Фото" className="w-full rounded-2xl object-cover max-h-64" />
                 <button
                   type="button"
                   onClick={() => patch('photoBase64', null)}
@@ -390,14 +394,24 @@ export default function EntryScreen() {
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="flex flex-col items-center gap-3 py-8 border-2 border-dashed border-outline-variant/40 rounded-xl text-primary hover:bg-surface-container-low transition-colors"
-              >
-                <span className="material-symbols-outlined text-[36px] text-primary-container">photo_camera</span>
-                <span className="font-label font-medium text-sm">Прикрепить фото</span>
-              </button>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => cameraRef.current?.click()}
+                  className="flex-1 flex flex-col items-center gap-2 py-6 border-2 border-dashed border-outline-variant/40 rounded-2xl text-primary hover:bg-surface-container-low transition-colors active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[30px] text-primary-container">photo_camera</span>
+                  <span className="font-label font-medium text-xs">Камера</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => galleryRef.current?.click()}
+                  className="flex-1 flex flex-col items-center gap-2 py-6 border-2 border-dashed border-outline-variant/40 rounded-2xl text-primary hover:bg-surface-container-low transition-colors active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[30px] text-primary-container">photo_library</span>
+                  <span className="font-label font-medium text-xs">Галерея</span>
+                </button>
+              </div>
             )}
           </section>
 
@@ -409,7 +423,7 @@ export default function EntryScreen() {
               placeholder="Любые наблюдения..."
               value={form.notes}
               onChange={e => patch('notes', e.target.value)}
-              className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed resize-none"
+              className="w-full bg-surface-container-highest rounded-2xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed resize-none"
             />
           </section>
 
