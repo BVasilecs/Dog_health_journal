@@ -5,6 +5,21 @@ import { DiaryEntry, StoolWalk, BRISTOL_DESCRIPTIONS, STOOL_COLORS, WALK_LABELS 
 import { format, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
+function compressImage(dataUrl: string, maxWidth = 1024, quality = 0.72): Promise<string> {
+  return new Promise(resolve => {
+    const img = new Image()
+    img.onload = () => {
+      const ratio = Math.min(1, maxWidth / img.width)
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * ratio)
+      canvas.height = Math.round(img.height * ratio)
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.src = dataUrl
+  })
+}
+
 function nowTime() {
   const n = new Date()
   return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`
@@ -222,7 +237,10 @@ export default function EntryScreen() {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = ev => patch('photoBase64', ev.target?.result as string)
+    reader.onload = async ev => {
+      const compressed = await compressImage(ev.target?.result as string)
+      patch('photoBase64', compressed)
+    }
     reader.readAsDataURL(file)
   }
 

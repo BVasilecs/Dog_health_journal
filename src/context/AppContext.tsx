@@ -114,7 +114,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries))
+    } catch {
+      // QuotaExceededError — retry without photos
+      try {
+        const slim = state.entries.map(e => ({ ...e, photoBase64: null }))
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(slim))
+      } catch {
+        // storage completely full — skip silently
+      }
+    }
   }, [state.entries])
 
   const todayStr = new Date().toISOString().split('T')[0]
