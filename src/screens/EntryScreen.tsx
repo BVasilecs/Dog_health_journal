@@ -113,7 +113,7 @@ function WalkSection({
           {/* Color selector */}
           <div className="flex flex-col gap-2">
             <p className="font-label text-[10px] font-semibold text-secondary uppercase tracking-wide">Цвет</p>
-            <div className="flex justify-between items-end w-full">
+            <div className="flex items-end w-full">
               {(Object.entries(STOOL_COLORS) as [keyof typeof STOOL_COLORS, { hex: string; label: string }][]).map(([key, { hex, label }]) => {
                 const selected = walk.color === key
                 return (
@@ -121,7 +121,7 @@ function WalkSection({
                     key={key}
                     type="button"
                     onClick={() => patch('color', selected ? null : key as StoolWalk['color'])}
-                    className="flex flex-col items-center gap-1"
+                    className="flex-1 flex flex-col items-center gap-1"
                     title={label}
                   >
                     <div
@@ -278,18 +278,6 @@ export default function EntryScreen() {
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: '6rem' }}>
         <div className="px-4 pt-4 pb-6 flex flex-col gap-5 max-w-lg mx-auto">
 
-          {/* Date / Time row */}
-          <div className="flex items-center gap-2">
-            <label className="font-label text-sm text-on-surface-variant">Время записи:</label>
-            <input
-              type="time"
-              value={form.time}
-              onChange={e => patch('time', e.target.value)}
-              className="bg-surface-container-lowest px-4 py-2 rounded-full font-label text-sm text-primary font-medium shadow-card focus:outline-none focus:ring-2 focus:ring-primary-fixed"
-            />
-            <NowBtn onSet={t => patch('time', t)} />
-          </div>
-
           {/* ════ STOMACH ════ */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card relative overflow-hidden">
             <div className="absolute -right-3 -top-3 opacity-5 pointer-events-none select-none">
@@ -306,8 +294,8 @@ export default function EntryScreen() {
           </section>
 
           {/* ════ STOOL — 3 WALKS ════ */}
-          <section className="flex flex-col gap-3">
-            <h2 className="font-headline text-lg font-bold text-primary px-1">💩 Стул</h2>
+          <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
+            <h2 className="font-headline text-lg font-bold text-primary">💩 Стул</h2>
             {((['morning', 'afternoon', 'evening'] as const)).map(walkKey => (
               <WalkSection
                 key={walkKey}
@@ -458,8 +446,8 @@ export default function EntryScreen() {
           </section>
 
           {/* ════ NOTES ════ */}
-          <section className="flex flex-col gap-2">
-            <h2 className="font-headline text-base font-bold text-primary px-1">📝 Заметки</h2>
+          <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
+            <h2 className="font-headline text-lg font-bold text-primary">📝 Заметки</h2>
             <textarea
               rows={4}
               placeholder="Любые наблюдения..."

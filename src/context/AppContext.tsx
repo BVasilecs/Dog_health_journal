@@ -167,7 +167,7 @@ export function buildBlankEntry(date: string): DiaryEntry {
       eveningFed: false, eveningTime: '20:00',
       treatsGiven: false, treatDetails: '',
     },
-    behavior: { mood: 'neutral', appetite: 'normal' },
+    behavior: { mood: 'happy', appetite: 'normal' },
     photoBase64: null,
     notes: '',
   }
