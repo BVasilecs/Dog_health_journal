@@ -29,7 +29,7 @@ export default function StatsScreen() {
     <div className="h-full overflow-y-auto bg-surface" style={{ paddingBottom: '6.5rem' }}>
       <header className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl px-5 py-4">
         <h1 className="font-headline text-2xl font-bold text-primary">Статистика</h1>
-        <p className="font-body text-sm text-on-surface-variant mt-0.5">Ритм здоровья Endži</p>
+        <p className="font-body text-sm text-on-surface-variant mt-0.5">Ритм здоровья {state.pet.name}</p>
       </header>
 
       <main className="px-4 pb-4 flex flex-col gap-5 max-w-lg mx-auto">

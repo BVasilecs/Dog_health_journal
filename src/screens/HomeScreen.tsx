@@ -45,12 +45,21 @@ export default function HomeScreen() {
     <div className="h-full overflow-y-auto bg-surface" style={{ paddingBottom: '6.5rem' }}>
       {/* ── Top App Bar ── */}
       <header className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-xl select-none">
-            🐾
+        <button
+          onClick={() => dispatch({ type: 'OPEN_PET_SETTINGS' })}
+          className="flex items-center gap-3 hover:opacity-80 active:scale-95 transition-all"
+        >
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-primary-fixed flex items-center justify-center">
+            {state.pet.avatarBase64
+              ? <img src={state.pet.avatarBase64} className="w-full h-full object-cover" />
+              : <span className="text-xl select-none">🐾</span>
+            }
           </div>
-          <h1 className="font-headline font-bold text-lg text-primary">Endži</h1>
-        </div>
+          <div className="flex items-center gap-1">
+            <h1 className="font-headline font-bold text-lg text-primary">{state.pet.name}</h1>
+            <span className="material-symbols-outlined text-[16px] text-on-surface-variant">chevron_right</span>
+          </div>
+        </button>
         <span className="font-label text-sm text-on-surface-variant">{todayLabel}</span>
       </header>
 
@@ -61,13 +70,19 @@ export default function HomeScreen() {
             <span className="material-symbols-outlined text-[120px] icon-fill">pets</span>
           </div>
           <div className="flex items-center gap-4 relative">
-            <div className="w-20 h-20 rounded-full bg-primary-fixed flex items-center justify-center text-5xl shadow-card border-4 border-surface-container-lowest select-none shrink-0">
-              🐶
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-primary-fixed flex items-center justify-center shadow-card border-4 border-surface-container-lowest shrink-0">
+              {state.pet.avatarBase64
+                ? <img src={state.pet.avatarBase64} className="w-full h-full object-cover" />
+                : <span className="text-5xl select-none">🐶</span>
+              }
             </div>
             <div>
-              <h2 className="font-headline text-3xl font-extrabold tracking-tight text-on-surface">Endži</h2>
-              <p className="text-sm font-label font-medium text-secondary mt-0.5">Cavalier King Charles Spaniel</p>
-              <p className="text-xs text-on-surface-variant mt-1">29.09.2022 · Royal Canin Hypo</p>
+              <h2 className="font-headline text-3xl font-extrabold tracking-tight text-on-surface">{state.pet.name}</h2>
+              <p className="text-sm font-label font-medium text-secondary mt-0.5">{state.pet.breed}</p>
+              <p className="text-xs text-on-surface-variant mt-1">
+                {state.pet.birthday.split('-').reverse().join('.')}
+                {state.pet.food ? ` · ${state.pet.food}` : ''}
+              </p>
             </div>
           </div>
         </section>
@@ -155,7 +170,7 @@ export default function HomeScreen() {
                             const walksCount = [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(x => x.occurred).length
                             return (
                               <>
-                                <span className="font-headline font-semibold text-on-surface text-sm">
+                                <span className="font-headline font-bold text-on-surface text-sm">
                                   {walksCount > 0 ? `${walksCount} прогул.` : 'Нет прогулок'}
                                   {w?.bristolScale ? ` · Б${w.bristolScale}` : ''}
                                 </span>

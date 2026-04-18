@@ -1,62 +1,55 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { DiaryEntry } from '../types'
+import { DiaryEntry, PetProfile } from '../types'
 import { getEntryStatus } from './status'
 import { format } from 'date-fns'
-import { ru } from 'date-fns/locale'
-
-const DOG_INFO = {
-  name: 'Endzi (Blackberry White Endzy)',
-  breed: 'Cavalier King Charles Spaniel',
-  dob: '29.09.2022',
-  notes: 'Chiari malformation confirmed (MRI 19.01.2023). Chronic occult blood in stool since 2023. Diet: Royal Canin Hypoallergenic.',
-}
 
 function bristolLabel(n: number | null): string {
-  if (n === null) return '—'
+  if (n === null) return '-'
   const map: Record<number, string> = {
-    1: '1 - Твёрдые комки',
-    2: '2 - Колбаска с комками',
-    3: '3 - С трещинами',
-    4: '4 - Норма',
-    5: '5 - Мягкие кусочки',
-    6: '6 - Кашица',
-    7: '7 - Водянистый',
+    1: '1 - Hard lumps',
+    2: '2 - Lumpy',
+    3: '3 - Cracked',
+    4: '4 - Normal',
+    5: '5 - Soft pieces',
+    6: '6 - Mushy',
+    7: '7 - Liquid',
   }
   return map[n] ?? String(n)
 }
 
 function colorLabel(c: string | null): string {
-  if (!c) return '—'
+  if (!c) return '-'
   const map: Record<string, string> = {
-    brown: 'Коричневый',
-    'yellow-green': 'Жёлто-зелёный',
-    green: 'Зелёный',
-    black: 'Чёрный',
-    red: 'Красный',
+    brown: 'Brown',
+    'yellow-green': 'Yellow-green',
+    green: 'Green',
+    black: 'Black',
+    red: 'Red',
   }
   return map[c] ?? c
 }
 
 function moodLabel(m: string): string {
-  return m === 'happy' ? 'Весёлая' : m === 'neutral' ? 'Нейтральная' : 'Вялая'
+  return m === 'happy' ? 'Happy' : m === 'neutral' ? 'Neutral' : 'Lethargic'
 }
 
 function appetiteLabel(a: string): string {
-  return a === 'normal' ? 'Норма' : a === 'reduced' ? 'Снижен' : 'Отказ'
+  return a === 'normal' ? 'Normal' : a === 'reduced' ? 'Reduced' : 'Refused'
 }
 
 function bool(v: boolean): string {
-  return v ? 'Да' : 'Нет'
+  return v ? 'Yes' : 'No'
 }
 
-function statusLabel(entry: DiaryEntry): string {
+function entryStatus(entry: DiaryEntry): string {
   const s = getEntryStatus(entry)
-  return s === 'green' ? 'Норма' : s === 'yellow' ? 'Симптомы' : 'Эпизод'
+  return s === 'green' ? 'Normal' : s === 'yellow' ? 'Mild' : 'Episode'
 }
 
 export interface ExportOptions {
   entries: DiaryEntry[]
+  pet: PetProfile
   fromDate: string
   toDate: string
   includePhotos: boolean
@@ -65,7 +58,7 @@ export interface ExportOptions {
 }
 
 export function generateVetPDF(opts: ExportOptions): void {
-  const { entries, fromDate, toDate, includePhotos, includeNotes, includeStats } = opts
+  const { entries, pet, fromDate, toDate, includePhotos, includeNotes, includeStats } = opts
 
   const filtered = entries
     .filter(e => e.date >= fromDate && e.date <= toDate)
@@ -81,7 +74,7 @@ export function generateVetPDF(opts: ExportOptions): void {
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(18)
-  doc.text('Endzi Health Journal', margin, 14)
+  doc.text(`${pet.name} Health Journal`, margin, 14)
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.text(`Digestive Health Report  |  Generated: ${format(new Date(), 'dd.MM.yyyy')}`, margin, 22)
@@ -91,16 +84,28 @@ export function generateVetPDF(opts: ExportOptions): void {
   let y = 46
   doc.setTextColor(27, 28, 26)
   doc.setFillColor(207, 234, 202)
-  doc.roundedRect(margin, y, pageW - margin * 2, 30, 3, 3, 'F')
+
+  // Calculate height based on whether there are vet notes
+  const hasVetNotes = pet.vetNotes.trim().length > 0
+  const infoBoxH = hasVetNotes ? 38 : 26
+  doc.roundedRect(margin, y, pageW - margin * 2, infoBoxH, 3, 3, 'F')
+
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
-  doc.text(DOG_INFO.name, margin + 4, y + 8)
+  doc.text(pet.name, margin + 4, y + 8)
+
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
-  doc.text(`Breed: ${DOG_INFO.breed}   |   DOB: ${DOG_INFO.dob}`, margin + 4, y + 15)
-  doc.text(`Medical notes: ${DOG_INFO.notes}`, margin + 4, y + 22, { maxWidth: pageW - margin * 2 - 8 })
+  const dobFormatted = pet.birthday
+    ? pet.birthday.split('-').reverse().join('.')
+    : '-'
+  doc.text(`Breed: ${pet.breed}   |   DOB: ${dobFormatted}${pet.food ? `   |   Diet: ${pet.food}` : ''}`, margin + 4, y + 16)
 
-  y += 38
+  if (hasVetNotes) {
+    doc.text(`Medical notes: ${pet.vetNotes}`, margin + 4, y + 24, { maxWidth: pageW - margin * 2 - 8 })
+  }
+
+  y += infoBoxH + 8
 
   // ── Stats summary ──
   if (includeStats && filtered.length > 0) {
@@ -115,41 +120,41 @@ export function generateVetPDF(opts: ExportOptions): void {
     doc.setFontSize(9)
     doc.setTextColor(27, 28, 26)
     doc.text(`Total entries: ${total}`, margin + 4, y + 8)
-    doc.text(`Good days: ${good}`, margin + 40, y + 8)
-    doc.text(`Mild symptoms: ${mild}`, margin + 80, y + 8)
-    doc.text(`Episodes: ${episodes}`, margin + 130, y + 8)
+    doc.text(`Good days: ${good}`, margin + 44, y + 8)
+    doc.text(`Mild symptoms: ${mild}`, margin + 90, y + 8)
+    doc.text(`Episodes: ${episodes}`, margin + 145, y + 8)
     y += 28
   }
 
   // ── Table ──
   const columns = [
-    { header: 'Date', dataKey: 'date' },
-    { header: 'Bristol', dataKey: 'bristol' },
-    { header: 'Color', dataKey: 'color' },
-    { header: 'Mucus', dataKey: 'mucus' },
-    { header: 'Blood', dataKey: 'blood' },
-    { header: 'x/day', dataKey: 'times' },
-    { header: 'Mood', dataKey: 'mood' },
-    { header: 'Appetite', dataKey: 'appetite' },
-    { header: 'Status', dataKey: 'status' },
+    { header: 'Date',      dataKey: 'date' },
+    { header: 'Walks',     dataKey: 'times' },
+    { header: 'Bristol',   dataKey: 'bristol' },
+    { header: 'Color',     dataKey: 'color' },
+    { header: 'Mucus',     dataKey: 'mucus' },
+    { header: 'Blood',     dataKey: 'blood' },
+    { header: 'Mood',      dataKey: 'mood' },
+    { header: 'Appetite',  dataKey: 'appetite' },
+    { header: 'Status',    dataKey: 'status' },
   ]
 
   const rows = filtered.map(e => {
     const walks = [e.stool.morning, e.stool.afternoon, e.stool.evening].filter(w => w.occurred)
-    const bristols = walks.map(w => w.bristolScale ?? '?').join('/')
-    const colors = [...new Set(walks.map(w => w.color).filter(Boolean).map(c => colorLabel(c)))].join('/')
+    const bristols = walks.map(w => bristolLabel(w.bristolScale)).join('\n')
+    const colors = [...new Set(walks.map(w => colorLabel(w.color)))].filter(c => c !== '-').join(', ') || '-'
     const anyMucus = walks.some(w => w.mucus)
     const anyBlood = walks.some(w => w.visibleBlood)
     return {
       date: e.date,
-      bristol: bristols || '—',
-      color: colors || '—',
+      times: String(walks.length),
+      bristol: bristols || '-',
+      color: colors,
       mucus: bool(anyMucus),
       blood: bool(anyBlood),
-      times: String(walks.length),
       mood: moodLabel(e.behavior.mood),
       appetite: appetiteLabel(e.behavior.appetite),
-      status: statusLabel(e),
+      status: entryStatus(e),
     }
   })
 
@@ -157,14 +162,26 @@ export function generateVetPDF(opts: ExportOptions): void {
     startY: y,
     head: [columns.map(c => c.header)],
     body: rows.map(r => columns.map(c => (r as Record<string, string>)[c.dataKey])),
-    styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: [77, 100, 75], textColor: 255, fontStyle: 'bold' },
+    styles: { fontSize: 8, cellPadding: 2.5, lineColor: [220, 218, 214], lineWidth: 0.1 },
+    headStyles: { fillColor: [77, 100, 75], textColor: 255, fontStyle: 'bold', fontSize: 8 },
     alternateRowStyles: { fillColor: [245, 243, 239] },
+    columnStyles: {
+      0: { cellWidth: 22 },  // Date
+      1: { cellWidth: 12, halign: 'center' },  // Walks
+      2: { cellWidth: 36 },  // Bristol
+      3: { cellWidth: 26 },  // Color
+      4: { cellWidth: 14, halign: 'center' },  // Mucus
+      5: { cellWidth: 14, halign: 'center' },  // Blood
+      6: { cellWidth: 20 },  // Mood
+      7: { cellWidth: 20 },  // Appetite
+      8: { cellWidth: 18 },  // Status
+    },
     didParseCell: (data) => {
       if (data.section === 'body' && data.column.index === 8) {
         const val = data.cell.raw as string
-        if (val === 'Эпизод') data.cell.styles.textColor = [186, 26, 26]
-        else if (val === 'Норма') data.cell.styles.textColor = [77, 100, 75]
+        if (val === 'Episode') data.cell.styles.textColor = [186, 26, 26]
+        else if (val === 'Normal') data.cell.styles.textColor = [77, 100, 75]
+        data.cell.styles.fontStyle = 'bold'
       }
     },
     margin: { left: margin, right: margin },
@@ -235,13 +252,13 @@ export function generateVetPDF(opts: ExportOptions): void {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7)
     doc.text(
-      `Endzi Health Journal  |  Page ${i} of ${pageCount}  |  For veterinary use`,
+      `${pet.name} Health Journal  |  Page ${i} of ${pageCount}  |  For veterinary use`,
       pageW / 2,
       doc.internal.pageSize.getHeight() - 6,
       { align: 'center' }
     )
   }
 
-  const filename = `endzi-health-${fromDate}-${toDate}.pdf`
+  const filename = `${pet.name.toLowerCase()}-health-${fromDate}-${toDate}.pdf`
   doc.save(filename)
 }

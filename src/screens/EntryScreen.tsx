@@ -55,7 +55,7 @@ function WalkSection({
   }
 
   return (
-    <div className={`rounded-2xl overflow-hidden transition-all ${walk.occurred ? 'bg-surface-container-lowest shadow-card' : 'bg-surface-container-low'}`}>
+    <div className={`rounded-2xl overflow-hidden transition-all ${walk.occurred ? 'bg-surface-container ring-1 ring-outline-variant/30 shadow-card' : 'bg-surface-container-low'}`}>
       {/* Walk header */}
       <div className="flex items-center gap-3 p-4">
         <span className="text-2xl select-none">{meta.icon}</span>

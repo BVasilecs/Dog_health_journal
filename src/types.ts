@@ -42,6 +42,53 @@ export type EntryStatus = 'green' | 'yellow' | 'red'
 
 export type Screen = 'home' | 'calendar' | 'stats' | 'export'
 
+export interface PetProfile {
+  name: string
+  breed: string
+  birthday: string
+  food: string
+  vetNotes: string
+  avatarBase64: string | null
+}
+
+export const POPULAR_BREEDS = [
+  'Cavalier King Charles Spaniel',
+  'Labrador Retriever',
+  'French Bulldog',
+  'Golden Retriever',
+  'German Shepherd',
+  'Poodle',
+  'Bulldog',
+  'Beagle',
+  'Rottweiler',
+  'Dachshund',
+  'Pembroke Welsh Corgi',
+  'Australian Shepherd',
+  'Yorkshire Terrier',
+  'Doberman Pinscher',
+  'Boxer',
+  'Miniature Schnauzer',
+  'Siberian Husky',
+  'Great Dane',
+  'Shih Tzu',
+  'Border Collie',
+  'Bernese Mountain Dog',
+  'Pomeranian',
+  'Shetland Sheepdog',
+  'Cocker Spaniel',
+  'Maltese',
+  'Chihuahua',
+  'Bichon Frise',
+  'Boston Terrier',
+  'Jack Russell Terrier',
+  'Staffordshire Bull Terrier',
+  'Weimaraner',
+  'Whippet',
+  'Basset Hound',
+  'Havanese',
+  'Другая порода',
+]
+
 export const BRISTOL_DESCRIPTIONS: Record<number, string> = {
   1: 'Твёрдые комки',
   2: 'Колбаска с комками',

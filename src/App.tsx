@@ -5,9 +5,11 @@ import CalendarScreen from './screens/CalendarScreen'
 import StatsScreen from './screens/StatsScreen'
 import ExportScreen from './screens/ExportScreen'
 import EntryScreen from './screens/EntryScreen'
+import PetSettingsScreen from './screens/PetSettingsScreen'
 
 function AppShell() {
   const { state } = useApp()
+  const overlayOpen = state.entryScreenOpen || state.petSettingsOpen
 
   return (
     <div className="relative h-full bg-surface overflow-hidden">
@@ -19,15 +21,22 @@ function AppShell() {
         {state.activeScreen === 'export'   && <ExportScreen />}
       </div>
 
-      {/* ── Entry screen: full-screen overlay that slides up ── */}
+      {/* ── Entry screen: full-screen overlay ── */}
       {state.entryScreenOpen && (
         <div className="fixed inset-0 z-50 screen-enter">
           <EntryScreen />
         </div>
       )}
 
-      {/* ── Bottom navigation (hidden when entry screen is open) ── */}
-      {!state.entryScreenOpen && <BottomNav />}
+      {/* ── Pet settings: full-screen overlay ── */}
+      {state.petSettingsOpen && (
+        <div className="fixed inset-0 z-50 screen-enter">
+          <PetSettingsScreen />
+        </div>
+      )}
+
+      {/* ── Bottom navigation (hidden when any overlay is open) ── */}
+      {!overlayOpen && <BottomNav />}
     </div>
   )
 }

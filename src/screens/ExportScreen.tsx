@@ -29,7 +29,7 @@ export default function ExportScreen() {
     if (filtered.length === 0) return
     setGenerating(true)
     try {
-      generateVetPDF({ entries: state.entries, fromDate, toDate, includePhotos, includeNotes, includeStats })
+      generateVetPDF({ entries: state.entries, pet: state.pet, fromDate, toDate, includePhotos, includeNotes, includeStats })
     } finally {
       setGenerating(false)
     }
@@ -146,8 +146,8 @@ export default function ExportScreen() {
               <div className="bg-primary-fixed rounded-xl p-3 flex items-center gap-3">
                 <span className="text-3xl select-none">🐶</span>
                 <div>
-                  <p className="font-headline font-bold text-sm text-on-primary-fixed">Endzi · Cavalier KCS</p>
-                  <p className="font-label text-xs text-on-primary-fixed-variant">Р. 29.09.2022 · Royal Canin Hypo</p>
+                  <p className="font-headline font-bold text-sm text-on-primary-fixed">{state.pet.name} · {state.pet.breed.split(' ').slice(0, 3).join(' ')}</p>
+                  <p className="font-label text-xs text-on-primary-fixed-variant">Р. {state.pet.birthday.split('-').reverse().join('.')}{state.pet.food ? ` · ${state.pet.food}` : ''}</p>
                 </div>
               </div>
 

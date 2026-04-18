@@ -1,13 +1,24 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
-import { DiaryEntry, StoolWalk, Screen } from '../types'
+import { DiaryEntry, StoolWalk, Screen, PetProfile } from '../types'
 
 // ── State ──────────────────────────────────────────────────────────────────
+
+const DEFAULT_PET: PetProfile = {
+  name: 'Endži',
+  breed: 'Cavalier King Charles Spaniel',
+  birthday: '2022-09-29',
+  food: 'Royal Canin Hypo',
+  vetNotes: '',
+  avatarBase64: null,
+}
 
 interface AppState {
   entries: DiaryEntry[]
   activeScreen: Screen
   editingDate: string | null
   entryScreenOpen: boolean
+  petSettingsOpen: boolean
+  pet: PetProfile
 }
 
 const INITIAL_STATE: AppState = {
@@ -15,6 +26,8 @@ const INITIAL_STATE: AppState = {
   activeScreen: 'home',
   editingDate: null,
   entryScreenOpen: false,
+  petSettingsOpen: false,
+  pet: DEFAULT_PET,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -27,6 +40,9 @@ type Action =
   | { type: 'OPEN_ENTRY'; payload: string | null }
   | { type: 'CLOSE_ENTRY' }
   | { type: 'LOAD_ENTRIES'; payload: DiaryEntry[] }
+  | { type: 'OPEN_PET_SETTINGS' }
+  | { type: 'CLOSE_PET_SETTINGS' }
+  | { type: 'SET_PET'; payload: PetProfile }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
 
@@ -46,6 +62,12 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, entryScreenOpen: true, editingDate: action.payload }
     case 'CLOSE_ENTRY':
       return { ...state, entryScreenOpen: false, editingDate: null }
+    case 'OPEN_PET_SETTINGS':
+      return { ...state, petSettingsOpen: true }
+    case 'CLOSE_PET_SETTINGS':
+      return { ...state, petSettingsOpen: false }
+    case 'SET_PET':
+      return { ...state, pet: action.payload }
     default:
       return state
   }
@@ -96,6 +118,7 @@ function migrateEntry(raw: any): DiaryEntry {
 // ── Provider ───────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'endzi_diary_entries'
+const PET_STORAGE_KEY = 'endzi_pet_profile'
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
@@ -110,6 +133,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {
       // corrupt storage — start fresh
+    }
+    try {
+      const petRaw = localStorage.getItem(PET_STORAGE_KEY)
+      if (petRaw) dispatch({ type: 'SET_PET', payload: JSON.parse(petRaw) })
+    } catch {
+      // use defaults
     }
   }, [])
 
@@ -126,6 +155,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [state.entries])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PET_STORAGE_KEY, JSON.stringify(state.pet))
+    } catch {
+      // skip silently
+    }
+  }, [state.pet])
 
   const todayStr = new Date().toISOString().split('T')[0]
   const getEntryForDate = (date: string) => state.entries.find(e => e.date === date)
