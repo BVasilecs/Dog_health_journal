@@ -95,6 +95,7 @@ function CropModal({ src, onApply, onCancel }: {
               position: 'absolute',
               width: displayW || CROP_UI,
               height: displayH || CROP_UI,
+              maxWidth: 'none',
               left: CROP_UI / 2 - (displayW || CROP_UI) / 2 + offset.x,
               top: CROP_UI / 2 - (displayH || CROP_UI) / 2 + offset.y,
               pointerEvents: 'none',
@@ -213,7 +214,7 @@ export default function PetSettingsScreen() {
 
           {/* Name */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
-            <h2 className="font-headline text-lg font-bold text-primary">🏷️ Имя</h2>
+            <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2"><span>🏷️</span>Имя</h2>
             <input
               type="text"
               value={form.name}
@@ -225,7 +226,7 @@ export default function PetSettingsScreen() {
 
           {/* Breed */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
-            <h2 className="font-headline text-lg font-bold text-primary">🐕 Порода</h2>
+            <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2"><span>🐕</span>Порода</h2>
             <select
               value={POPULAR_BREEDS.includes(form.breed) ? form.breed : 'Другая порода'}
               onChange={e => {
@@ -249,18 +250,18 @@ export default function PetSettingsScreen() {
 
           {/* Birthday */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
-            <h2 className="font-headline text-lg font-bold text-primary">🎂 День рождения</h2>
+            <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2"><span>🎂</span>День рождения</h2>
             <input
               type="date"
               value={form.birthday}
               onChange={e => patch('birthday', e.target.value)}
-              className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-fixed"
+              className="w-full min-w-0 box-border bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-fixed appearance-none"
             />
           </section>
 
           {/* Food */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
-            <h2 className="font-headline text-lg font-bold text-primary">🍽️ Текущий корм</h2>
+            <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2"><span>🍽️</span>Текущий корм</h2>
             <input
               type="text"
               value={form.food}
@@ -272,7 +273,7 @@ export default function PetSettingsScreen() {
 
           {/* Vet notes */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
-            <h2 className="font-headline text-lg font-bold text-primary">🩺 Заметки для врача</h2>
+            <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2"><span>🩺</span>Заметки для врача</h2>
             <textarea
               rows={4}
               placeholder="Аллергии, хронические заболевания, особые указания..."

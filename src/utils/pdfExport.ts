@@ -1,5 +1,7 @@
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TDocumentDefinitions = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Content = any
 import { DiaryEntry, PetProfile } from '../types'
 import { getEntryStatus } from './status'
 import { format } from 'date-fns'
@@ -7,13 +9,8 @@ import { format } from 'date-fns'
 function bristolLabel(n: number | null): string {
   if (n === null) return '-'
   const map: Record<number, string> = {
-    1: '1 - Hard lumps',
-    2: '2 - Lumpy',
-    3: '3 - Cracked',
-    4: '4 - Normal',
-    5: '5 - Soft pieces',
-    6: '6 - Mushy',
-    7: '7 - Liquid',
+    1: '1 - Hard lumps', 2: '2 - Lumpy', 3: '3 - Cracked',
+    4: '4 - Normal',     5: '5 - Soft pieces', 6: '6 - Mushy', 7: '7 - Liquid',
   }
   return map[n] ?? String(n)
 }
@@ -21,11 +18,8 @@ function bristolLabel(n: number | null): string {
 function colorLabel(c: string | null): string {
   if (!c) return '-'
   const map: Record<string, string> = {
-    brown: 'Brown',
-    'yellow-green': 'Yellow-green',
-    green: 'Green',
-    black: 'Black',
-    red: 'Red',
+    brown: 'Brown', 'yellow-green': 'Yellow-green',
+    green: 'Green', black: 'Black', red: 'Red',
   }
   return map[c] ?? c
 }
@@ -38,9 +32,7 @@ function appetiteLabel(a: string): string {
   return a === 'normal' ? 'Normal' : a === 'reduced' ? 'Reduced' : 'Refused'
 }
 
-function bool(v: boolean): string {
-  return v ? 'Yes' : 'No'
-}
+function bool(v: boolean): string { return v ? 'Yes' : 'No' }
 
 function entryStatus(entry: DiaryEntry): string {
   const s = getEntryStatus(entry)
@@ -57,55 +49,65 @@ export interface ExportOptions {
   includeStats: boolean
 }
 
-export function generateVetPDF(opts: ExportOptions): void {
+const GREEN = '#4d644b'
+const GREEN_LIGHT = '#cfead2'
+const GRAY_BG = '#efeeea'
+const TEXT = '#1b1c1a'
+
+export async function generateVetPDF(opts: ExportOptions): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfMake = (await import('pdfmake/build/pdfmake')) as any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfFonts = (await import('pdfmake/build/vfs_fonts')) as any
+  pdfMake.vfs = pdfFonts.pdfMake?.vfs ?? pdfFonts
+
   const { entries, pet, fromDate, toDate, includePhotos, includeNotes, includeStats } = opts
 
   const filtered = entries
     .filter(e => e.date >= fromDate && e.date <= toDate)
     .sort((a, b) => a.date.localeCompare(b.date))
 
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-  const pageW = doc.internal.pageSize.getWidth()
-  const margin = 14
+  const content: Content[] = []
 
   // ── Header ──
-  doc.setFillColor(77, 100, 75)
-  doc.rect(0, 0, pageW, 36, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(18)
-  doc.text(`${pet.name} Health Journal`, margin, 14)
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.text(`Digestive Health Report  |  Generated: ${format(new Date(), 'dd.MM.yyyy')}`, margin, 22)
-  doc.text(`Period: ${fromDate} — ${toDate}`, margin, 29)
+  content.push({
+    table: {
+      widths: ['*'],
+      body: [[{
+        stack: [
+          { text: `${pet.name} Health Journal`, fontSize: 18, bold: true, color: 'white' },
+          { text: `Digestive Health Report  |  Generated: ${format(new Date(), 'dd.MM.yyyy')}`, fontSize: 10, color: 'white', margin: [0, 4, 0, 0] },
+          { text: `Period: ${fromDate} — ${toDate}`, fontSize: 10, color: 'white', margin: [0, 2, 0, 0] },
+        ],
+        fillColor: GREEN,
+        border: [false, false, false, false],
+        margin: [4, 10, 4, 10],
+      }]],
+    },
+    layout: 'noBorders',
+    margin: [0, 0, 0, 10],
+  })
 
   // ── Dog Info ──
-  let y = 46
-  doc.setTextColor(27, 28, 26)
-  doc.setFillColor(207, 234, 202)
-
-  // Calculate height based on whether there are vet notes
-  const hasVetNotes = pet.vetNotes.trim().length > 0
-  const infoBoxH = hasVetNotes ? 38 : 26
-  doc.roundedRect(margin, y, pageW - margin * 2, infoBoxH, 3, 3, 'F')
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.text(pet.name, margin + 4, y + 8)
-
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9)
-  const dobFormatted = pet.birthday
-    ? pet.birthday.split('-').reverse().join('.')
-    : '-'
-  doc.text(`Breed: ${pet.breed}   |   DOB: ${dobFormatted}${pet.food ? `   |   Diet: ${pet.food}` : ''}`, margin + 4, y + 16)
-
-  if (hasVetNotes) {
-    doc.text(`Medical notes: ${pet.vetNotes}`, margin + 4, y + 24, { maxWidth: pageW - margin * 2 - 8 })
+  const dobFormatted = pet.birthday ? pet.birthday.split('-').reverse().join('.') : '-'
+  const infoRows: Content[] = [
+    { text: pet.name, fontSize: 11, bold: true, color: TEXT },
+    {
+      text: `Breed: ${pet.breed}   |   DOB: ${dobFormatted}${pet.food ? `   |   Diet: ${pet.food}` : ''}`,
+      fontSize: 9, color: TEXT, margin: [0, 4, 0, 0],
+    },
+  ]
+  if (pet.vetNotes.trim()) {
+    infoRows.push({ text: `Medical notes: ${pet.vetNotes}`, fontSize: 9, color: TEXT, margin: [0, 4, 0, 0] })
   }
-
-  y += infoBoxH + 8
+  content.push({
+    table: {
+      widths: ['*'],
+      body: [[{ stack: infoRows, fillColor: GREEN_LIGHT, border: [false, false, false, false], margin: [6, 8, 6, 8] }]],
+    },
+    layout: 'noBorders',
+    margin: [0, 0, 0, 8],
+  })
 
   // ── Stats summary ──
   if (includeStats && filtered.length > 0) {
@@ -113,104 +115,71 @@ export function generateVetPDF(opts: ExportOptions): void {
     const good = filtered.filter(e => getEntryStatus(e) === 'green').length
     const episodes = filtered.filter(e => getEntryStatus(e) === 'red').length
     const mild = total - good - episodes
-
-    doc.setFillColor(239, 238, 234)
-    doc.roundedRect(margin, y, pageW - margin * 2, 20, 3, 3, 'F')
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(27, 28, 26)
-    doc.text(`Total entries: ${total}`, margin + 4, y + 8)
-    doc.text(`Good days: ${good}`, margin + 44, y + 8)
-    doc.text(`Mild symptoms: ${mild}`, margin + 90, y + 8)
-    doc.text(`Episodes: ${episodes}`, margin + 145, y + 8)
-    y += 28
+    content.push({
+      table: {
+        widths: ['*'],
+        body: [[{
+          text: `Total entries: ${total}     Good days: ${good}     Mild symptoms: ${mild}     Episodes: ${episodes}`,
+          fontSize: 9, bold: true, color: TEXT,
+          fillColor: GRAY_BG, border: [false, false, false, false],
+          margin: [6, 6, 6, 6],
+        }]],
+      },
+      layout: 'noBorders',
+      margin: [0, 0, 0, 10],
+    })
   }
 
-  // ── Table ──
-  const columns = [
-    { header: 'Date',      dataKey: 'date' },
-    { header: 'Walks',     dataKey: 'times' },
-    { header: 'Bristol',   dataKey: 'bristol' },
-    { header: 'Color',     dataKey: 'color' },
-    { header: 'Mucus',     dataKey: 'mucus' },
-    { header: 'Blood',     dataKey: 'blood' },
-    { header: 'Mood',      dataKey: 'mood' },
-    { header: 'Appetite',  dataKey: 'appetite' },
-    { header: 'Status',    dataKey: 'status' },
-  ]
-
-  const rows = filtered.map(e => {
+  // ── Data table ──
+  const tableHeaders = ['Date', 'Walks', 'Bristol', 'Color', 'Mucus', 'Blood', 'Mood', 'Appetite', 'Status']
+  const tableRows = filtered.map(e => {
     const walks = [e.stool.morning, e.stool.afternoon, e.stool.evening].filter(w => w.occurred)
-    const bristols = walks.map(w => bristolLabel(w.bristolScale)).join('\n')
+    const bristols = walks.map(w => bristolLabel(w.bristolScale)).join('\n') || '-'
     const colors = [...new Set(walks.map(w => colorLabel(w.color)))].filter(c => c !== '-').join(', ') || '-'
-    const anyMucus = walks.some(w => w.mucus)
-    const anyBlood = walks.some(w => w.visibleBlood)
-    return {
-      date: e.date,
-      times: String(walks.length),
-      bristol: bristols || '-',
-      color: colors,
-      mucus: bool(anyMucus),
-      blood: bool(anyBlood),
-      mood: moodLabel(e.behavior.mood),
-      appetite: appetiteLabel(e.behavior.appetite),
-      status: entryStatus(e),
-    }
+    const status = entryStatus(e)
+    return [
+      e.date,
+      String(walks.length),
+      bristols,
+      colors,
+      bool(walks.some(w => w.mucus)),
+      bool(walks.some(w => w.visibleBlood)),
+      moodLabel(e.behavior.mood),
+      appetiteLabel(e.behavior.appetite),
+      { text: status, bold: true, color: status === 'Episode' ? '#ba1a1a' : status === 'Normal' ? GREEN : TEXT },
+    ]
   })
 
-  autoTable(doc, {
-    startY: y,
-    head: [columns.map(c => c.header)],
-    body: rows.map(r => columns.map(c => (r as Record<string, string>)[c.dataKey])),
-    styles: { fontSize: 8, cellPadding: 2.5, lineColor: [220, 218, 214], lineWidth: 0.1 },
-    headStyles: { fillColor: [77, 100, 75], textColor: 255, fontStyle: 'bold', fontSize: 8 },
-    alternateRowStyles: { fillColor: [245, 243, 239] },
-    columnStyles: {
-      0: { cellWidth: 22 },  // Date
-      1: { cellWidth: 12, halign: 'center' },  // Walks
-      2: { cellWidth: 36 },  // Bristol
-      3: { cellWidth: 26 },  // Color
-      4: { cellWidth: 14, halign: 'center' },  // Mucus
-      5: { cellWidth: 14, halign: 'center' },  // Blood
-      6: { cellWidth: 20 },  // Mood
-      7: { cellWidth: 20 },  // Appetite
-      8: { cellWidth: 18 },  // Status
+  content.push({
+    table: {
+      headerRows: 1,
+      widths: [32, 18, 52, 38, 20, 20, 30, 30, 28],
+      body: [
+        tableHeaders.map(h => ({ text: h, bold: true, fontSize: 8, color: 'white', fillColor: GREEN })),
+        ...tableRows.map((row, i) => row.map(cell => ({
+          ...(typeof cell === 'string' ? { text: cell } : cell),
+          fontSize: 8,
+          fillColor: i % 2 === 1 ? '#f5f3ef' : 'white',
+        }))),
+      ],
     },
-    didParseCell: (data) => {
-      if (data.section === 'body' && data.column.index === 8) {
-        const val = data.cell.raw as string
-        if (val === 'Episode') data.cell.styles.textColor = [186, 26, 26]
-        else if (val === 'Normal') data.cell.styles.textColor = [77, 100, 75]
-        data.cell.styles.fontStyle = 'bold'
-      }
+    layout: {
+      hLineWidth: () => 0.3,
+      vLineWidth: () => 0.3,
+      hLineColor: () => '#dcdad6',
+      vLineColor: () => '#dcdad6',
     },
-    margin: { left: margin, right: margin },
+    margin: [0, 0, 0, 0],
   })
 
   // ── Notes pages ──
   if (includeNotes) {
     const withNotes = filtered.filter(e => e.notes.trim())
     if (withNotes.length > 0) {
-      doc.addPage()
-      doc.setFillColor(77, 100, 75)
-      doc.rect(0, 0, pageW, 18, 'F')
-      doc.setTextColor(255, 255, 255)
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(13)
-      doc.text('Notes', margin, 12)
-      let ny = 28
+      content.push({ text: 'Notes', fontSize: 13, bold: true, color: 'white', background: GREEN, pageBreak: 'before', margin: [0, 0, 0, 8] })
       withNotes.forEach(e => {
-        if (ny > 270) { doc.addPage(); ny = 20 }
-        doc.setTextColor(77, 100, 75)
-        doc.setFont('helvetica', 'bold')
-        doc.setFontSize(9)
-        doc.text(e.date, margin, ny)
-        ny += 5
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(27, 28, 26)
-        const lines = doc.splitTextToSize(e.notes, pageW - margin * 2)
-        doc.text(lines, margin, ny)
-        ny += lines.length * 5 + 6
+        content.push({ text: e.date, fontSize: 9, bold: true, color: GREEN, margin: [0, 6, 0, 2] })
+        content.push({ text: e.notes, fontSize: 9, color: TEXT, margin: [0, 0, 0, 4] })
       })
     }
   }
@@ -219,46 +188,32 @@ export function generateVetPDF(opts: ExportOptions): void {
   if (includePhotos) {
     const withPhotos = filtered.filter(e => e.photoBase64)
     if (withPhotos.length > 0) {
-      doc.addPage()
-      doc.setFillColor(77, 100, 75)
-      doc.rect(0, 0, pageW, 18, 'F')
-      doc.setTextColor(255, 255, 255)
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(13)
-      doc.text('Photos', margin, 12)
-      let py = 26
+      content.push({ text: 'Photos', fontSize: 13, bold: true, color: 'white', background: GREEN, pageBreak: 'before', margin: [0, 0, 0, 8] })
       withPhotos.forEach(e => {
-        if (py > 220) { doc.addPage(); py = 20 }
-        doc.setTextColor(27, 28, 26)
-        doc.setFont('helvetica', 'bold')
-        doc.setFontSize(9)
-        doc.text(e.date, margin, py)
-        py += 4
+        content.push({ text: e.date, fontSize: 9, bold: true, color: TEXT, margin: [0, 6, 0, 2] })
         try {
-          doc.addImage(e.photoBase64!, 'JPEG', margin, py, 70, 55)
-          py += 62
+          content.push({ image: e.photoBase64!, width: 140, margin: [0, 0, 0, 8] })
         } catch {
-          py += 4
+          // skip broken image
         }
       })
     }
   }
 
-  // ── Footer ──
-  const pageCount = doc.getNumberOfPages()
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i)
-    doc.setTextColor(115, 121, 113)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7)
-    doc.text(
-      `${pet.name} Health Journal  |  Page ${i} of ${pageCount}  |  For veterinary use`,
-      pageW / 2,
-      doc.internal.pageSize.getHeight() - 6,
-      { align: 'center' }
-    )
+  const docDef: TDocumentDefinitions = {
+    pageSize: 'A4',
+    pageMargins: [14, 14, 14, 20],
+    defaultStyle: { font: 'Roboto', fontSize: 10, color: TEXT },
+    content,
+    footer: (currentPage: number, pageCount: number) => ({
+      text: `${pet.name} Health Journal  |  Page ${currentPage} of ${pageCount}  |  For veterinary use`,
+      alignment: 'center',
+      fontSize: 7,
+      color: '#737971',
+      margin: [0, 4, 0, 0],
+    }),
   }
 
   const filename = `${pet.name.toLowerCase()}-health-${fromDate}-${toDate}.pdf`
-  doc.save(filename)
+  pdfMake.createPdf(docDef).download(filename)
 }

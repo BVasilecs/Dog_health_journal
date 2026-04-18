@@ -29,7 +29,7 @@ export default function ExportScreen() {
     if (filtered.length === 0) return
     setGenerating(true)
     try {
-      generateVetPDF({ entries: state.entries, pet: state.pet, fromDate, toDate, includePhotos, includeNotes, includeStats })
+      await generateVetPDF({ entries: state.entries, pet: state.pet, fromDate, toDate, includePhotos, includeNotes, includeStats })
     } finally {
       setGenerating(false)
     }
