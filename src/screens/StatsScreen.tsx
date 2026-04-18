@@ -167,9 +167,12 @@ export default function StatsScreen() {
                           {format(parseISO(entry.date), 'd MMMM yyyy', { locale: ru })}
                         </p>
                         <p className="font-label text-xs text-on-surface-variant truncate">
-                          Бристоль {entry.stool.bristolScale ?? '—'}
-                          {entry.stool.visibleBlood && ' · кровь'}
-                          {entry.stool.mucus && ' · слизь'}
+                          {[entry.stool.morning, entry.stool.afternoon, entry.stool.evening]
+                            .filter(w => w.occurred && w.bristolScale)
+                            .map(w => `Б${w.bristolScale}`)
+                            .join(' / ') || 'Без данных'}
+                          {[entry.stool.morning, entry.stool.afternoon, entry.stool.evening].some(w => w.visibleBlood) && ' · кровь'}
+                          {[entry.stool.morning, entry.stool.afternoon, entry.stool.evening].some(w => w.mucus) && ' · слизь'}
                         </p>
                       </div>
                       <div

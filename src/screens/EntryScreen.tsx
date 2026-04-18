@@ -1,9 +1,171 @@
 import { useState, useRef, useEffect } from 'react'
 import { useApp, buildBlankEntry } from '../context/AppContext'
 import Toggle from '../components/Toggle'
-import { DiaryEntry, BRISTOL_DESCRIPTIONS, STOOL_COLORS } from '../types'
+import { DiaryEntry, StoolWalk, BRISTOL_DESCRIPTIONS, STOOL_COLORS, WALK_LABELS } from '../types'
 import { format, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
+
+// ── Walk sub-form ──────────────────────────────────────────────────────────
+
+function WalkSection({
+  walkKey,
+  walk,
+  onChange,
+}: {
+  walkKey: keyof DiaryEntry['stool']
+  walk: StoolWalk
+  onChange: (w: StoolWalk) => void
+}) {
+  const meta = WALK_LABELS[walkKey]
+
+  function patch<K extends keyof StoolWalk>(k: K, v: StoolWalk[K]) {
+    onChange({ ...walk, [k]: v })
+  }
+
+  return (
+    <div className={`rounded-xl overflow-hidden transition-all ${walk.occurred ? 'bg-surface-container-lowest shadow-card' : 'bg-surface-container-low'}`}>
+      {/* Walk header */}
+      <div className="flex items-center gap-3 p-4">
+        <span className="text-2xl select-none">{meta.icon}</span>
+        <div className="flex-1">
+          <p className="font-label font-semibold text-sm text-on-surface">{meta.label}</p>
+          <input
+            type="time"
+            value={walk.time}
+            onChange={e => patch('time', e.target.value)}
+            className="bg-transparent font-label text-xs text-on-surface-variant focus:outline-none mt-0.5"
+          />
+        </div>
+        {/* Occurred toggle */}
+        <div className="flex items-center gap-2">
+          <span className="font-label text-xs text-on-surface-variant">Была</span>
+          <Toggle checked={walk.occurred} onChange={v => patch('occurred', v)} />
+        </div>
+      </div>
+
+      {/* Details — shown only if occurred */}
+      {walk.occurred && (
+        <div className="px-4 pb-4 flex flex-col gap-4 border-t border-outline-variant/20 pt-4">
+
+          {/* Bristol Scale */}
+          <div className="flex flex-col gap-2">
+            <p className="font-label text-[10px] font-semibold text-secondary uppercase tracking-wide">Шкала Бристоль</p>
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 snap-x">
+              {([1,2,3,4,5,6,7] as const).map(n => {
+                const selected = walk.bristolScale === n
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => patch('bristolScale', selected ? null : n)}
+                    className={`snap-start shrink-0 w-[4.2rem] flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl transition-all
+                      ${selected ? 'bg-primary-fixed shadow-card' : 'bg-surface-container hover:bg-surface-container-high'}`}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center
+                      ${selected ? 'bg-surface-container-lowest' : 'bg-surface-container-highest'}`}>
+                      <span className={`font-headline font-bold text-sm ${selected ? 'text-primary' : 'text-on-surface-variant'}`}>{n}</span>
+                    </div>
+                    <span className={`text-[8px] text-center leading-tight px-0.5
+                      ${selected ? 'text-on-primary-fixed-variant font-medium' : 'text-on-surface-variant'}`}>
+                      {BRISTOL_DESCRIPTIONS[n]}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Color selector */}
+          <div className="flex flex-col gap-2">
+            <p className="font-label text-[10px] font-semibold text-secondary uppercase tracking-wide">Цвет</p>
+            <div className="flex gap-3 items-center flex-wrap">
+              {(Object.entries(STOOL_COLORS) as [keyof typeof STOOL_COLORS, { hex: string; label: string }][]).map(([key, { hex, label }]) => {
+                const selected = walk.color === key
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => patch('color', selected ? null : key as StoolWalk['color'])}
+                    className="flex flex-col items-center gap-1"
+                    title={label}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-full shadow-card transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
+                      style={{
+                        backgroundColor: hex,
+                        outline: selected ? `3px solid ${hex}` : 'none',
+                        outlineOffset: 3,
+                      }}
+                    >
+                      {selected && <span className="material-symbols-outlined text-white text-[16px] icon-fill">check</span>}
+                    </div>
+                    <span className="font-label text-[8px] text-on-surface-variant">{label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Condition toggles */}
+          <div className="flex flex-col gap-2.5 pt-2 border-t border-outline-variant/15">
+            {([
+              { key: 'mucus',        label: 'Слизь',          color: '#e68570' },
+              { key: 'strongSmell',  label: 'Сильный запах',  color: '#85530d' },
+              { key: 'visibleBlood', label: 'Видимая кровь',  color: '#ba1a1a' },
+            ] as { key: keyof StoolWalk; label: string; color: string }[]).map(({ key, label, color }) => (
+              <div key={key} className="flex items-center justify-between">
+                <span className={`font-label text-sm font-medium ${key === 'visibleBlood' ? 'text-error' : 'text-on-surface'}`}>
+                  {label}
+                </span>
+                <Toggle
+                  checked={walk[key] as boolean}
+                  onChange={v => patch(key, v)}
+                  colorOn={color}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Delete confirmation popup ──────────────────────────────────────────────
+
+function DeleteConfirmPopup({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-inverse-surface/40 backdrop-blur-sm">
+      <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-float w-full max-w-sm flex flex-col gap-5">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="w-14 h-14 rounded-full bg-error-container flex items-center justify-center">
+            <span className="material-symbols-outlined text-error text-[28px] icon-fill">delete</span>
+          </div>
+          <h2 className="font-headline font-bold text-xl text-on-surface">Удалить запись?</h2>
+          <p className="font-body text-sm text-on-surface-variant leading-relaxed">
+            Это действие нельзя отменить. Все данные за этот день будут удалены навсегда.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3 rounded-full bg-surface-container font-headline font-bold text-sm text-on-surface hover:bg-surface-container-high transition-colors active:scale-95"
+          >
+            Отменить
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-3 rounded-full bg-error font-headline font-bold text-sm text-on-error shadow-float hover:opacity-90 transition-opacity active:scale-95"
+          >
+            Удалить
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main EntryScreen ───────────────────────────────────────────────────────
 
 export default function EntryScreen() {
   const { state, dispatch, getEntryForDate } = useApp()
@@ -11,6 +173,7 @@ export default function EntryScreen() {
   const existing = getEntryForDate(date)
 
   const [form, setForm] = useState<DiaryEntry>(() => existing ?? buildBlankEntry(date))
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -21,9 +184,6 @@ export default function EntryScreen() {
   function patch<T extends keyof DiaryEntry>(key: T, val: DiaryEntry[T]) {
     setForm(f => ({ ...f, [key]: val }))
   }
-  function patchStool<K extends keyof DiaryEntry['stool']>(k: K, v: DiaryEntry['stool'][K]) {
-    setForm(f => ({ ...f, stool: { ...f.stool, [k]: v } }))
-  }
   function patchFood<K extends keyof DiaryEntry['food']>(k: K, v: DiaryEntry['food'][K]) {
     setForm(f => ({ ...f, food: { ...f.food, [k]: v } }))
   }
@@ -32,6 +192,9 @@ export default function EntryScreen() {
   }
   function patchStomach<K extends keyof DiaryEntry['stomach']>(k: K, v: DiaryEntry['stomach'][K]) {
     setForm(f => ({ ...f, stomach: { ...f.stomach, [k]: v } }))
+  }
+  function patchWalk(walkKey: keyof DiaryEntry['stool'], walk: StoolWalk) {
+    setForm(f => ({ ...f, stool: { ...f.stool, [walkKey]: walk } }))
   }
 
   function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -43,11 +206,13 @@ export default function EntryScreen() {
   }
 
   function handleSave() {
-    if (existing) {
-      dispatch({ type: 'UPDATE_ENTRY', payload: form })
-    } else {
-      dispatch({ type: 'ADD_ENTRY', payload: form })
-    }
+    if (existing) dispatch({ type: 'UPDATE_ENTRY', payload: form })
+    else dispatch({ type: 'ADD_ENTRY', payload: form })
+    dispatch({ type: 'CLOSE_ENTRY' })
+  }
+
+  function handleDelete() {
+    dispatch({ type: 'DELETE_ENTRY', payload: form.id })
     dispatch({ type: 'CLOSE_ENTRY' })
   }
 
@@ -67,7 +232,6 @@ export default function EntryScreen() {
           <p className="font-headline font-bold text-base text-on-surface">{dateLabel}</p>
           <p className="font-label text-xs text-on-surface-variant">{existing ? 'Редактирование' : 'Новая запись'}</p>
         </div>
-        {/* Spacer */}
         <div className="w-10" />
       </header>
 
@@ -75,7 +239,7 @@ export default function EntryScreen() {
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: '6rem' }}>
         <div className="px-4 pt-4 pb-6 flex flex-col gap-5 max-w-lg mx-auto">
 
-          {/* ── Date / Time row ── */}
+          {/* Date / Time row */}
           <div className="flex items-center gap-3">
             <label className="font-label text-sm text-on-surface-variant">Время записи:</label>
             <input
@@ -97,127 +261,26 @@ export default function EntryScreen() {
                 <p className="font-label font-medium text-on-surface">Урчал живот утром?</p>
                 <p className="font-label text-xs text-on-surface-variant mt-0.5">Громкие звуки из живота</p>
               </div>
-              <Toggle
-                checked={form.stomach.rumbling}
-                onChange={v => patchStomach('rumbling', v)}
-                colorOn="#f59e0b"
-              />
+              <Toggle checked={form.stomach.rumbling} onChange={v => patchStomach('rumbling', v)} colorOn="#f59e0b" />
             </div>
           </section>
 
-          {/* ════ STOOL ════ */}
-          <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-5">
-            <div className="flex items-center justify-between">
-              <h2 className="font-headline text-lg font-bold text-primary">💩 Стул</h2>
-              {/* Times per day stepper */}
-              <div className="flex items-center gap-3 bg-surface-container-low px-3 py-2 rounded-full">
-                <span className="font-label text-xs text-on-surface-variant">раз/день</span>
-                <button
-                  type="button"
-                  onClick={() => patchStool('timesPerDay', Math.max(0, form.stool.timesPerDay - 1))}
-                  className="w-7 h-7 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary font-bold shadow-card hover:bg-surface-container transition-colors"
-                >−</button>
-                <span className="font-headline font-bold text-base w-4 text-center">{form.stool.timesPerDay}</span>
-                <button
-                  type="button"
-                  onClick={() => patchStool('timesPerDay', form.stool.timesPerDay + 1)}
-                  className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold shadow-card hover:opacity-90 transition-opacity"
-                >+</button>
-              </div>
-            </div>
-
-            {/* Bristol Scale */}
-            <div className="flex flex-col gap-2">
-              <p className="font-label text-xs font-semibold text-secondary uppercase tracking-wide">Шкала Бристоль</p>
-              <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 snap-x">
-                {([1,2,3,4,5,6,7] as const).map(n => {
-                  const selected = form.stool.bristolScale === n
-                  return (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => patchStool('bristolScale', selected ? null : n)}
-                      className={`snap-start shrink-0 w-[4.5rem] flex flex-col items-center gap-2 py-3 px-1 rounded-xl transition-all
-                        ${selected
-                          ? 'bg-primary-fixed shadow-card'
-                          : 'bg-surface-container-low hover:bg-surface-container'}`}
-                    >
-                      {selected && (
-                        <span className="absolute -mt-1 ml-10 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                          <span className="material-symbols-outlined text-[10px] text-on-primary icon-fill">check</span>
-                        </span>
-                      )}
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center
-                        ${selected ? 'bg-surface-container-lowest' : 'bg-surface-container-highest'}`}>
-                        <span className={`font-headline font-bold text-base ${selected ? 'text-primary' : 'text-on-surface-variant'}`}>{n}</span>
-                      </div>
-                      <span className={`text-[9px] text-center leading-tight px-0.5
-                        ${selected ? 'text-on-primary-fixed-variant font-medium' : 'text-on-surface-variant'}`}>
-                        {BRISTOL_DESCRIPTIONS[n]}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Color selector */}
-            <div className="flex flex-col gap-2">
-              <p className="font-label text-xs font-semibold text-secondary uppercase tracking-wide">Цвет</p>
-              <div className="flex gap-3 items-center flex-wrap">
-                {(Object.entries(STOOL_COLORS) as [keyof typeof STOOL_COLORS, { hex: string; label: string }][]).map(([key, { hex, label }]) => {
-                  const selected = form.stool.color === key
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => patchStool('color', selected ? null : key as DiaryEntry['stool']['color'])}
-                      className="flex flex-col items-center gap-1"
-                      title={label}
-                    >
-                      <div
-                        className="w-9 h-9 rounded-full shadow-card transition-transform hover:scale-110 active:scale-95"
-                        style={{
-                          backgroundColor: hex,
-                          outline: selected ? `3px solid ${hex}` : 'none',
-                          outlineOffset: 3,
-                        }}
-                      >
-                        {selected && (
-                          <span className="flex items-center justify-center h-full text-white material-symbols-outlined text-[18px] icon-fill">check</span>
-                        )}
-                      </div>
-                      <span className="font-label text-[9px] text-on-surface-variant">{label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Condition toggles */}
-            <div className="flex flex-col gap-3 pt-3 border-t border-outline-variant/20">
-              {([
-                { key: 'mucus',       label: 'Слизь',         color: '#e68570' },
-                { key: 'strongSmell', label: 'Сильный запах', color: '#85530d' },
-                { key: 'visibleBlood',label: 'Видимая кровь', color: '#ba1a1a' },
-              ] as { key: keyof DiaryEntry['stool']; label: string; color: string }[]).map(({ key, label, color }) => (
-                <div key={key} className="flex items-center justify-between">
-                  <span className={`font-label font-medium ${key === 'visibleBlood' ? 'text-error' : 'text-on-surface'}`}>{label}</span>
-                  <Toggle
-                    checked={form.stool[key] as boolean}
-                    onChange={v => patchStool(key, v)}
-                    colorOn={color}
-                  />
-                </div>
-              ))}
-            </div>
+          {/* ════ STOOL — 3 WALKS ════ */}
+          <section className="flex flex-col gap-3">
+            <h2 className="font-headline text-lg font-bold text-primary px-1">💩 Стул</h2>
+            {((['morning', 'afternoon', 'evening'] as const)).map(walkKey => (
+              <WalkSection
+                key={walkKey}
+                walkKey={walkKey}
+                walk={form.stool[walkKey]}
+                onChange={w => patchWalk(walkKey, w)}
+              />
+            ))}
           </section>
 
           {/* ════ FOOD ════ */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-4">
             <h2 className="font-headline text-lg font-bold text-primary">🍽️ Питание</h2>
-
-            {/* Meal rows */}
             {([
               { fedKey: 'morningFed',   timeKey: 'morningTime',   label: 'Утром' },
               { fedKey: 'afternoonFed', timeKey: 'afternoonTime', label: 'Днём' },
@@ -230,9 +293,7 @@ export default function EntryScreen() {
                   className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors
                     ${form.food[fedKey] ? 'bg-primary border-primary' : 'border-outline-variant bg-transparent'}`}
                 >
-                  {form.food[fedKey] && (
-                    <span className="material-symbols-outlined text-[14px] text-on-primary icon-fill">check</span>
-                  )}
+                  {form.food[fedKey] && <span className="material-symbols-outlined text-[14px] text-on-primary icon-fill">check</span>}
                 </button>
                 <span className="font-label font-medium text-on-surface flex-1">{label}</span>
                 <input
@@ -243,18 +304,12 @@ export default function EntryScreen() {
                 />
               </div>
             ))}
-
-            {/* Treats */}
             <div className="flex items-center justify-between bg-secondary-fixed/30 p-4 rounded-xl mt-1">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary icon-fill">cookie</span>
                 <span className="font-label font-medium text-secondary">Давали угощение?</span>
               </div>
-              <Toggle
-                checked={form.food.treatsGiven}
-                onChange={v => patchFood('treatsGiven', v)}
-                colorOn="#85530d"
-              />
+              <Toggle checked={form.food.treatsGiven} onChange={v => patchFood('treatsGiven', v)} colorOn="#85530d" />
             </div>
             {form.food.treatsGiven && (
               <input
@@ -270,15 +325,13 @@ export default function EntryScreen() {
           {/* ════ BEHAVIOR ════ */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-5">
             <h2 className="font-headline text-lg font-bold text-primary">🐾 Поведение</h2>
-
-            {/* Mood */}
             <div className="flex flex-col gap-2">
               <p className="font-label text-xs font-semibold text-secondary uppercase tracking-wide">Настроение</p>
               <div className="flex gap-3">
                 {([
-                  { val: 'happy',   emoji: '😊', label: 'Весёлая' },
-                  { val: 'neutral', emoji: '😐', label: 'Нейтральная' },
-                  { val: 'lethargic', emoji: '😔', label: 'Вялая' },
+                  { val: 'happy',    emoji: '😊', label: 'Весёлая' },
+                  { val: 'neutral',  emoji: '😐', label: 'Нейтральная' },
+                  { val: 'lethargic',emoji: '😔', label: 'Вялая' },
                 ] as { val: DiaryEntry['behavior']['mood']; emoji: string; label: string }[]).map(({ val, emoji, label }) => {
                   const active = form.behavior.mood === val
                   return (
@@ -296,8 +349,6 @@ export default function EntryScreen() {
                 })}
               </div>
             </div>
-
-            {/* Appetite */}
             <div className="flex flex-col gap-2">
               <p className="font-label text-xs font-semibold text-secondary uppercase tracking-wide">Аппетит</p>
               <div className="flex bg-surface-container p-1 rounded-xl">
@@ -313,9 +364,7 @@ export default function EntryScreen() {
                       type="button"
                       onClick={() => patchBehavior('appetite', val)}
                       className={`flex-1 py-2.5 text-sm rounded-lg font-label font-medium transition-all
-                        ${active
-                          ? 'bg-surface-container-lowest shadow-card text-primary'
-                          : 'text-on-surface-variant hover:bg-surface-container-lowest/50'}`}
+                        ${active ? 'bg-surface-container-lowest shadow-card text-primary' : 'text-on-surface-variant hover:bg-surface-container-lowest/50'}`}
                     >
                       {label}
                     </button>
@@ -328,21 +377,10 @@ export default function EntryScreen() {
           {/* ════ PHOTO ════ */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
             <h2 className="font-headline text-lg font-bold text-primary">📸 Фото</h2>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={handlePhoto}
-            />
+            <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
             {form.photoBase64 ? (
               <div className="relative">
-                <img
-                  src={form.photoBase64}
-                  alt="Фото"
-                  className="w-full rounded-xl object-cover max-h-64"
-                />
+                <img src={form.photoBase64} alt="Фото" className="w-full rounded-xl object-cover max-h-64" />
                 <button
                   type="button"
                   onClick={() => patch('photoBase64', null)}
@@ -375,6 +413,18 @@ export default function EntryScreen() {
             />
           </section>
 
+          {/* ════ DELETE BUTTON (only for existing entries) ════ */}
+          {existing && (
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full py-4 rounded-full border-2 border-error/40 text-error font-headline font-bold text-base hover:bg-error-container/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2"
+            >
+              <span className="material-symbols-outlined text-[20px] icon-fill">delete</span>
+              Удалить запись
+            </button>
+          )}
+
         </div>
       </div>
 
@@ -391,6 +441,14 @@ export default function EntryScreen() {
           Сохранить запись
         </button>
       </div>
+
+      {/* ── Delete confirmation popup ── */}
+      {showDeleteConfirm && (
+        <DeleteConfirmPopup
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </div>
   )
 }

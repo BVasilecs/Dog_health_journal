@@ -1,8 +1,23 @@
 import { useApp } from '../context/AppContext'
 import { getEntryStatus, statusBg, statusColor, statusEmoji, statusLabel } from '../utils/status'
-import { BRISTOL_DESCRIPTIONS, STOOL_COLORS } from '../types'
+import { DiaryEntry, BRISTOL_DESCRIPTIONS, STOOL_COLORS } from '../types'
 import { format, subDays, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
+
+function bestWalk(entry: DiaryEntry) {
+  const walks = [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(w => w.occurred)
+  if (walks.length === 0) return null
+  // Return the walk with the most notable bristol scale (furthest from 4)
+  return walks.reduce((a, b) => {
+    const da = Math.abs((a.bristolScale ?? 4) - 4)
+    const db = Math.abs((b.bristolScale ?? 4) - 4)
+    return db > da ? b : a
+  })
+}
+
+function anyFlag(entry: DiaryEntry, flag: 'mucus' | 'visibleBlood') {
+  return [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].some(w => w.occurred && w[flag])
+}
 
 function moodEmoji(mood: string) {
   return mood === 'happy' ? '😊' : mood === 'lethargic' ? '😔' : '😐'
@@ -75,12 +90,14 @@ export default function HomeScreen() {
               <p className="font-headline font-bold text-xl text-on-surface">
                 {todayStatus ? statusLabel(todayStatus) : 'Нет записи'}
               </p>
-              {todayEntry && (
-                <p className="text-sm text-on-surface-variant mt-0.5">
-                  Бристоль {todayEntry.stool.bristolScale ?? '—'} ·{' '}
-                  {BRISTOL_DESCRIPTIONS[todayEntry.stool.bristolScale ?? 0] ?? ''}
-                </p>
-              )}
+              {todayEntry && (() => {
+                const w = bestWalk(todayEntry)
+                return w ? (
+                  <p className="text-sm text-on-surface-variant mt-0.5">
+                    Бристоль {w.bristolScale ?? '—'} · {BRISTOL_DESCRIPTIONS[w.bristolScale ?? 0] ?? ''}
+                  </p>
+                ) : null
+              })()}
             </div>
           </div>
         </section>
@@ -133,15 +150,24 @@ export default function HomeScreen() {
                     {entry ? (
                       <>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-headline font-semibold text-on-surface text-sm">
-                            Бристоль {entry.stool.bristolScale ?? '—'}
-                          </span>
-                          {entry.stool.color && (
-                            <span className="w-3 h-3 rounded-full shrink-0"
-                              style={{ backgroundColor: STOOL_COLORS[entry.stool.color]?.hex }} />
-                          )}
-                          {entry.stool.mucus && <span className="text-xs bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded-full">слизь</span>}
-                          {entry.stool.visibleBlood && <span className="text-xs bg-error-container text-on-error-container px-2 py-0.5 rounded-full">кровь</span>}
+                          {(() => {
+                            const w = bestWalk(entry)
+                            const walksCount = [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(x => x.occurred).length
+                            return (
+                              <>
+                                <span className="font-headline font-semibold text-on-surface text-sm">
+                                  {walksCount > 0 ? `${walksCount} прогул.` : 'Нет прогулок'}
+                                  {w?.bristolScale ? ` · Б${w.bristolScale}` : ''}
+                                </span>
+                                {w?.color && (
+                                  <span className="w-3 h-3 rounded-full shrink-0"
+                                    style={{ backgroundColor: STOOL_COLORS[w.color]?.hex }} />
+                                )}
+                              </>
+                            )
+                          })()}
+                          {anyFlag(entry, 'mucus') && <span className="text-xs bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded-full">слизь</span>}
+                          {anyFlag(entry, 'visibleBlood') && <span className="text-xs bg-error-container text-on-error-container px-2 py-0.5 rounded-full">кровь</span>}
                         </div>
                         <p className="font-label text-xs text-on-surface-variant mt-0.5">
                           {moodEmoji(entry.behavior.mood)}{' '}

@@ -169,43 +169,52 @@ export default function CalendarScreen() {
               {selectedEntry ? (
                 <div className="flex flex-col gap-3">
                   {/* Quick stats row */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-surface-container-low rounded-xl p-3 text-center">
-                      <p className="font-label text-[10px] text-on-surface-variant mb-1">Бристоль</p>
-                      <p className="font-headline font-bold text-xl text-on-surface">
-                        {selectedEntry.stool.bristolScale ?? '—'}
-                      </p>
-                    </div>
-                    <div className="bg-surface-container-low rounded-xl p-3 text-center">
-                      <p className="font-label text-[10px] text-on-surface-variant mb-1">Раз/день</p>
-                      <p className="font-headline font-bold text-xl text-on-surface">
-                        {selectedEntry.stool.timesPerDay}
-                      </p>
-                    </div>
-                    <div className="bg-surface-container-low rounded-xl p-3 text-center">
-                      <p className="font-label text-[10px] text-on-surface-variant mb-1">Настроение</p>
-                      <p className="text-xl select-none">
-                        {selectedEntry.behavior.mood === 'happy' ? '😊' : selectedEntry.behavior.mood === 'lethargic' ? '😔' : '😐'}
-                      </p>
-                    </div>
-                  </div>
+                  {(() => {
+                    const walks = [
+                      { key: 'morning',   label: '🌅', w: selectedEntry.stool.morning },
+                      { key: 'afternoon', label: '☀️', w: selectedEntry.stool.afternoon },
+                      { key: 'evening',   label: '🌙', w: selectedEntry.stool.evening },
+                    ].filter(x => x.w.occurred)
+                    const walksCount = walks.length
+                    return (
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-surface-container-low rounded-xl p-3 text-center">
+                          <p className="font-label text-[10px] text-on-surface-variant mb-1">Прогулок</p>
+                          <p className="font-headline font-bold text-xl text-on-surface">{walksCount}</p>
+                        </div>
+                        <div className="bg-surface-container-low rounded-xl p-3 text-center">
+                          <p className="font-label text-[10px] text-on-surface-variant mb-1">Бристоль</p>
+                          <p className="font-headline font-bold text-xl text-on-surface">
+                            {walks.length > 0 ? (walks[0].w.bristolScale ?? '—') : '—'}
+                          </p>
+                        </div>
+                        <div className="bg-surface-container-low rounded-xl p-3 text-center">
+                          <p className="font-label text-[10px] text-on-surface-variant mb-1">Настроение</p>
+                          <p className="text-xl select-none">
+                            {selectedEntry.behavior.mood === 'happy' ? '😊' : selectedEntry.behavior.mood === 'lethargic' ? '😔' : '😐'}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })()}
 
                   {/* Flags */}
                   <div className="flex flex-wrap gap-2">
-                    {selectedEntry.stool.color && (
-                      <span className="flex items-center gap-1.5 bg-surface-container-low px-3 py-1 rounded-full font-label text-xs">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: STOOL_COLORS[selectedEntry.stool.color]?.hex }} />
-                        {STOOL_COLORS[selectedEntry.stool.color]?.label}
-                      </span>
-                    )}
-                    {selectedEntry.stool.mucus && <span className="bg-tertiary-fixed text-on-tertiary-fixed px-3 py-1 rounded-full font-label text-xs">Слизь</span>}
-                    {selectedEntry.stool.visibleBlood && <span className="bg-error-container text-on-error-container px-3 py-1 rounded-full font-label text-xs">Кровь</span>}
-                    {selectedEntry.stomach.rumbling && <span className="bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded-full font-label text-xs">Урчание</span>}
-                    {selectedEntry.stool.bristolScale && (
-                      <span className="bg-surface-container px-3 py-1 rounded-full font-label text-xs text-on-surface-variant">
-                        {BRISTOL_DESCRIPTIONS[selectedEntry.stool.bristolScale]}
-                      </span>
-                    )}
+                    {[selectedEntry.stool.morning, selectedEntry.stool.afternoon, selectedEntry.stool.evening]
+                      .filter(w => w.occurred && w.color)
+                      .slice(0, 1)
+                      .map((w, i) => w.color && (
+                        <span key={i} className="flex items-center gap-1.5 bg-surface-container-low px-3 py-1 rounded-full font-label text-xs">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: STOOL_COLORS[w.color]?.hex }} />
+                          {STOOL_COLORS[w.color]?.label}
+                        </span>
+                      ))}
+                    {[selectedEntry.stool.morning, selectedEntry.stool.afternoon, selectedEntry.stool.evening].some(w => w.occurred && w.mucus) &&
+                      <span className="bg-tertiary-fixed text-on-tertiary-fixed px-3 py-1 rounded-full font-label text-xs">Слизь</span>}
+                    {[selectedEntry.stool.morning, selectedEntry.stool.afternoon, selectedEntry.stool.evening].some(w => w.occurred && w.visibleBlood) &&
+                      <span className="bg-error-container text-on-error-container px-3 py-1 rounded-full font-label text-xs">Кровь</span>}
+                    {selectedEntry.stomach.rumbling &&
+                      <span className="bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded-full font-label text-xs">Урчание</span>}
                   </div>
 
                   {selectedEntry.notes && (

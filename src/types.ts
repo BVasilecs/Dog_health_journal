@@ -1,3 +1,13 @@
+export interface StoolWalk {
+  time: string
+  occurred: boolean
+  bristolScale: 1 | 2 | 3 | 4 | 5 | 6 | 7 | null
+  color: 'brown' | 'yellow-green' | 'green' | 'black' | 'red' | null
+  mucus: boolean
+  strongSmell: boolean
+  visibleBlood: boolean
+}
+
 export interface DiaryEntry {
   id: string
   date: string // ISO date YYYY-MM-DD
@@ -6,12 +16,9 @@ export interface DiaryEntry {
     rumbling: boolean
   }
   stool: {
-    bristolScale: 1 | 2 | 3 | 4 | 5 | 6 | 7 | null
-    color: 'brown' | 'yellow-green' | 'green' | 'black' | 'red' | null
-    mucus: boolean
-    strongSmell: boolean
-    visibleBlood: boolean
-    timesPerDay: number
+    morning: StoolWalk
+    afternoon: StoolWalk
+    evening: StoolWalk
   }
   food: {
     morningFed: boolean
@@ -51,4 +58,10 @@ export const STOOL_COLORS: Record<string, { hex: string; label: string }> = {
   green: { hex: '#4A7C59', label: 'Зелёный' },
   black: { hex: '#1a1a1a', label: 'Чёрный' },
   red: { hex: '#C0392B', label: 'Красный' },
+}
+
+export const WALK_LABELS: Record<keyof DiaryEntry['stool'], { label: string; icon: string; defaultTime: string }> = {
+  morning:   { label: 'Утренняя прогулка',  icon: '🌅', defaultTime: '08:00' },
+  afternoon: { label: 'Дневная прогулка',   icon: '☀️', defaultTime: '14:00' },
+  evening:   { label: 'Вечерняя прогулка',  icon: '🌙', defaultTime: '20:00' },
 }

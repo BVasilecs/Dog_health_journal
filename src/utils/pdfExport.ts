@@ -134,17 +134,24 @@ export function generateVetPDF(opts: ExportOptions): void {
     { header: 'Status', dataKey: 'status' },
   ]
 
-  const rows = filtered.map(e => ({
-    date: e.date,
-    bristol: bristolLabel(e.stool.bristolScale),
-    color: colorLabel(e.stool.color),
-    mucus: bool(e.stool.mucus),
-    blood: bool(e.stool.visibleBlood),
-    times: String(e.stool.timesPerDay),
-    mood: moodLabel(e.behavior.mood),
-    appetite: appetiteLabel(e.behavior.appetite),
-    status: statusLabel(e),
-  }))
+  const rows = filtered.map(e => {
+    const walks = [e.stool.morning, e.stool.afternoon, e.stool.evening].filter(w => w.occurred)
+    const bristols = walks.map(w => w.bristolScale ?? '?').join('/')
+    const colors = [...new Set(walks.map(w => w.color).filter(Boolean).map(c => colorLabel(c)))].join('/')
+    const anyMucus = walks.some(w => w.mucus)
+    const anyBlood = walks.some(w => w.visibleBlood)
+    return {
+      date: e.date,
+      bristol: bristols || '—',
+      color: colors || '—',
+      mucus: bool(anyMucus),
+      blood: bool(anyBlood),
+      times: String(walks.length),
+      mood: moodLabel(e.behavior.mood),
+      appetite: appetiteLabel(e.behavior.appetite),
+      status: statusLabel(e),
+    }
+  })
 
   autoTable(doc, {
     startY: y,

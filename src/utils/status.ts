@@ -1,23 +1,34 @@
-import { DiaryEntry, EntryStatus } from '../types'
+import { DiaryEntry, EntryStatus, StoolWalk } from '../types'
+
+function walksOccurred(entry: DiaryEntry): StoolWalk[] {
+  return [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(w => w.occurred)
+}
 
 export function getEntryStatus(entry: DiaryEntry): EntryStatus {
-  const { stool, behavior, stomach } = entry
+  const { behavior, stomach } = entry
+  const walks = walksOccurred(entry)
+
+  // Red: any critical flag
+  const anyRed = walks.some(
+    w => w.visibleBlood || w.bristolScale === 6 || w.bristolScale === 7
+  )
   if (
-    stool.visibleBlood ||
-    (stool.bristolScale !== null && (stool.bristolScale === 6 || stool.bristolScale === 7)) ||
+    anyRed ||
     behavior.mood === 'lethargic' ||
     behavior.appetite === 'refused'
-  ) {
-    return 'red'
+  ) return 'red'
+
+  // Green: all occurred walks are Bristol 3-4, no mucus, no blood, no rumbling
+  if (walks.length > 0) {
+    const allGood = walks.every(
+      w =>
+        (w.bristolScale === 3 || w.bristolScale === 4) &&
+        !w.mucus &&
+        !w.visibleBlood
+    )
+    if (allGood && !stomach.rumbling) return 'green'
   }
-  if (
-    stool.bristolScale === 3 ||
-    stool.bristolScale === 4
-  ) {
-    if (!stool.mucus && !stool.visibleBlood && !stomach.rumbling) {
-      return 'green'
-    }
-  }
+
   return 'yellow'
 }
 
@@ -63,11 +74,8 @@ export function getGoodDayStreak(entries: DiaryEntry[]): number {
     d.setDate(d.getDate() - i)
     const dateStr = d.toISOString().split('T')[0]
     const status = getDayStatus(dateStr, entries)
-    if (status === 'green') {
-      streak++
-    } else {
-      break
-    }
+    if (status === 'green') streak++
+    else break
   }
   return streak
 }
@@ -77,9 +85,7 @@ export function getAverageCycleBetweenBadDays(entries: DiaryEntry[]): number | n
     .filter(e => getEntryStatus(e) === 'red')
     .map(e => e.date)
     .sort()
-
   if (badDays.length < 2) return null
-
   let totalGap = 0
   for (let i = 1; i < badDays.length; i++) {
     const prev = new Date(badDays[i - 1])
