@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="120" fill="#4d644b"/>
+  <!-- Paw print -->
+  <!-- Main pad -->
+  <ellipse cx="256" cy="320" rx="80" ry="70" fill="#cfeaca"/>
+  <!-- Toe pads -->
+  <ellipse cx="170" cy="230" rx="32" ry="28" fill="#cfeaca"/>
+  <ellipse cx="220" cy="195" rx="28" ry="25" fill="#cfeaca"/>
+  <ellipse cx="292" cy="195" rx="28" ry="25" fill="#cfeaca"/>
+  <ellipse cx="342" cy="230" rx="32" ry="28" fill="#cfeaca"/>
+</svg>

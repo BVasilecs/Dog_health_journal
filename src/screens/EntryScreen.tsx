@@ -1,0 +1,396 @@
+import { useState, useRef, useEffect } from 'react'
+import { useApp, buildBlankEntry } from '../context/AppContext'
+import Toggle from '../components/Toggle'
+import { DiaryEntry, BRISTOL_DESCRIPTIONS, STOOL_COLORS } from '../types'
+import { format, parseISO } from 'date-fns'
+import { ru } from 'date-fns/locale'
+
+export default function EntryScreen() {
+  const { state, dispatch, getEntryForDate } = useApp()
+  const date = state.editingDate ?? new Date().toISOString().split('T')[0]
+  const existing = getEntryForDate(date)
+
+  const [form, setForm] = useState<DiaryEntry>(() => existing ?? buildBlankEntry(date))
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const e = getEntryForDate(date)
+    setForm(e ?? buildBlankEntry(date))
+  }, [date])
+
+  function patch<T extends keyof DiaryEntry>(key: T, val: DiaryEntry[T]) {
+    setForm(f => ({ ...f, [key]: val }))
+  }
+  function patchStool<K extends keyof DiaryEntry['stool']>(k: K, v: DiaryEntry['stool'][K]) {
+    setForm(f => ({ ...f, stool: { ...f.stool, [k]: v } }))
+  }
+  function patchFood<K extends keyof DiaryEntry['food']>(k: K, v: DiaryEntry['food'][K]) {
+    setForm(f => ({ ...f, food: { ...f.food, [k]: v } }))
+  }
+  function patchBehavior<K extends keyof DiaryEntry['behavior']>(k: K, v: DiaryEntry['behavior'][K]) {
+    setForm(f => ({ ...f, behavior: { ...f.behavior, [k]: v } }))
+  }
+  function patchStomach<K extends keyof DiaryEntry['stomach']>(k: K, v: DiaryEntry['stomach'][K]) {
+    setForm(f => ({ ...f, stomach: { ...f.stomach, [k]: v } }))
+  }
+
+  function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => patch('photoBase64', ev.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  function handleSave() {
+    if (existing) {
+      dispatch({ type: 'UPDATE_ENTRY', payload: form })
+    } else {
+      dispatch({ type: 'ADD_ENTRY', payload: form })
+    }
+    dispatch({ type: 'CLOSE_ENTRY' })
+  }
+
+  const dateLabel = format(parseISO(date), "d MMMM yyyy", { locale: ru })
+
+  return (
+    <div className="h-full flex flex-col bg-surface-container-low">
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-40 bg-surface/90 backdrop-blur-xl px-5 py-3 flex items-center justify-between shadow-card">
+        <button
+          onClick={() => dispatch({ type: 'CLOSE_ENTRY' })}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-surface-container transition-colors active:scale-90"
+        >
+          <span className="material-symbols-outlined text-[24px]">close</span>
+        </button>
+        <div className="text-center">
+          <p className="font-headline font-bold text-base text-on-surface">{dateLabel}</p>
+          <p className="font-label text-xs text-on-surface-variant">{existing ? 'Редактирование' : 'Новая запись'}</p>
+        </div>
+        {/* Spacer */}
+        <div className="w-10" />
+      </header>
+
+      {/* ── Scrollable Form ── */}
+      <div className="flex-1 overflow-y-auto" style={{ paddingBottom: '6rem' }}>
+        <div className="px-4 pt-4 pb-6 flex flex-col gap-5 max-w-lg mx-auto">
+
+          {/* ── Date / Time row ── */}
+          <div className="flex items-center gap-3">
+            <label className="font-label text-sm text-on-surface-variant">Время записи:</label>
+            <input
+              type="time"
+              value={form.time}
+              onChange={e => patch('time', e.target.value)}
+              className="bg-surface-container-lowest px-4 py-2 rounded-full font-label text-sm text-primary font-medium shadow-card focus:outline-none focus:ring-2 focus:ring-primary-fixed"
+            />
+          </div>
+
+          {/* ════ STOMACH ════ */}
+          <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card relative overflow-hidden">
+            <div className="absolute -right-3 -top-3 opacity-5 pointer-events-none select-none">
+              <span className="material-symbols-outlined text-[80px] icon-fill">pets</span>
+            </div>
+            <h2 className="font-headline text-lg font-bold text-primary mb-4">🫃 Желудок</h2>
+            <div className="flex items-center justify-between bg-surface-container-low p-4 rounded-xl">
+              <div>
+                <p className="font-label font-medium text-on-surface">Урчал живот утром?</p>
+                <p className="font-label text-xs text-on-surface-variant mt-0.5">Громкие звуки из живота</p>
+              </div>
+              <Toggle
+                checked={form.stomach.rumbling}
+                onChange={v => patchStomach('rumbling', v)}
+                colorOn="#f59e0b"
+              />
+            </div>
+          </section>
+
+          {/* ════ STOOL ════ */}
+          <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-5">
+            <div className="flex items-center justify-between">
+              <h2 className="font-headline text-lg font-bold text-primary">💩 Стул</h2>
+              {/* Times per day stepper */}
+              <div className="flex items-center gap-3 bg-surface-container-low px-3 py-2 rounded-full">
+                <span className="font-label text-xs text-on-surface-variant">раз/день</span>
+                <button
+                  type="button"
+                  onClick={() => patchStool('timesPerDay', Math.max(0, form.stool.timesPerDay - 1))}
+                  className="w-7 h-7 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary font-bold shadow-card hover:bg-surface-container transition-colors"
+                >−</button>
+                <span className="font-headline font-bold text-base w-4 text-center">{form.stool.timesPerDay}</span>
+                <button
+                  type="button"
+                  onClick={() => patchStool('timesPerDay', form.stool.timesPerDay + 1)}
+                  className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold shadow-card hover:opacity-90 transition-opacity"
+                >+</button>
+              </div>
+            </div>
+
+            {/* Bristol Scale */}
+            <div className="flex flex-col gap-2">
+              <p className="font-label text-xs font-semibold text-secondary uppercase tracking-wide">Шкала Бристоль</p>
+              <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 snap-x">
+                {([1,2,3,4,5,6,7] as const).map(n => {
+                  const selected = form.stool.bristolScale === n
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => patchStool('bristolScale', selected ? null : n)}
+                      className={`snap-start shrink-0 w-[4.5rem] flex flex-col items-center gap-2 py-3 px-1 rounded-xl transition-all
+                        ${selected
+                          ? 'bg-primary-fixed shadow-card'
+                          : 'bg-surface-container-low hover:bg-surface-container'}`}
+                    >
+                      {selected && (
+                        <span className="absolute -mt-1 ml-10 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                          <span className="material-symbols-outlined text-[10px] text-on-primary icon-fill">check</span>
+                        </span>
+                      )}
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center
+                        ${selected ? 'bg-surface-container-lowest' : 'bg-surface-container-highest'}`}>
+                        <span className={`font-headline font-bold text-base ${selected ? 'text-primary' : 'text-on-surface-variant'}`}>{n}</span>
+                      </div>
+                      <span className={`text-[9px] text-center leading-tight px-0.5
+                        ${selected ? 'text-on-primary-fixed-variant font-medium' : 'text-on-surface-variant'}`}>
+                        {BRISTOL_DESCRIPTIONS[n]}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Color selector */}
+            <div className="flex flex-col gap-2">
+              <p className="font-label text-xs font-semibold text-secondary uppercase tracking-wide">Цвет</p>
+              <div className="flex gap-3 items-center flex-wrap">
+                {(Object.entries(STOOL_COLORS) as [keyof typeof STOOL_COLORS, { hex: string; label: string }][]).map(([key, { hex, label }]) => {
+                  const selected = form.stool.color === key
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => patchStool('color', selected ? null : key as DiaryEntry['stool']['color'])}
+                      className="flex flex-col items-center gap-1"
+                      title={label}
+                    >
+                      <div
+                        className="w-9 h-9 rounded-full shadow-card transition-transform hover:scale-110 active:scale-95"
+                        style={{
+                          backgroundColor: hex,
+                          outline: selected ? `3px solid ${hex}` : 'none',
+                          outlineOffset: 3,
+                        }}
+                      >
+                        {selected && (
+                          <span className="flex items-center justify-center h-full text-white material-symbols-outlined text-[18px] icon-fill">check</span>
+                        )}
+                      </div>
+                      <span className="font-label text-[9px] text-on-surface-variant">{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Condition toggles */}
+            <div className="flex flex-col gap-3 pt-3 border-t border-outline-variant/20">
+              {([
+                { key: 'mucus',       label: 'Слизь',         color: '#e68570' },
+                { key: 'strongSmell', label: 'Сильный запах', color: '#85530d' },
+                { key: 'visibleBlood',label: 'Видимая кровь', color: '#ba1a1a' },
+              ] as { key: keyof DiaryEntry['stool']; label: string; color: string }[]).map(({ key, label, color }) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span className={`font-label font-medium ${key === 'visibleBlood' ? 'text-error' : 'text-on-surface'}`}>{label}</span>
+                  <Toggle
+                    checked={form.stool[key] as boolean}
+                    onChange={v => patchStool(key, v)}
+                    colorOn={color}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ════ FOOD ════ */}
+          <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-4">
+            <h2 className="font-headline text-lg font-bold text-primary">🍽️ Питание</h2>
+
+            {/* Meal rows */}
+            {([
+              { fedKey: 'morningFed',   timeKey: 'morningTime',   label: 'Утром' },
+              { fedKey: 'afternoonFed', timeKey: 'afternoonTime', label: 'Днём' },
+              { fedKey: 'eveningFed',   timeKey: 'eveningTime',   label: 'Вечером' },
+            ] as { fedKey: keyof DiaryEntry['food']; timeKey: keyof DiaryEntry['food']; label: string }[]).map(({ fedKey, timeKey, label }) => (
+              <div key={fedKey} className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => patchFood(fedKey, !(form.food[fedKey] as boolean))}
+                  className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors
+                    ${form.food[fedKey] ? 'bg-primary border-primary' : 'border-outline-variant bg-transparent'}`}
+                >
+                  {form.food[fedKey] && (
+                    <span className="material-symbols-outlined text-[14px] text-on-primary icon-fill">check</span>
+                  )}
+                </button>
+                <span className="font-label font-medium text-on-surface flex-1">{label}</span>
+                <input
+                  type="time"
+                  value={form.food[timeKey] as string}
+                  onChange={e => patchFood(timeKey, e.target.value)}
+                  className="bg-surface-container-low px-3 py-1.5 rounded-full font-label text-sm text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary-fixed"
+                />
+              </div>
+            ))}
+
+            {/* Treats */}
+            <div className="flex items-center justify-between bg-secondary-fixed/30 p-4 rounded-xl mt-1">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-secondary icon-fill">cookie</span>
+                <span className="font-label font-medium text-secondary">Давали угощение?</span>
+              </div>
+              <Toggle
+                checked={form.food.treatsGiven}
+                onChange={v => patchFood('treatsGiven', v)}
+                colorOn="#85530d"
+              />
+            </div>
+            {form.food.treatsGiven && (
+              <input
+                type="text"
+                placeholder="Что именно?"
+                value={form.food.treatDetails}
+                onChange={e => patchFood('treatDetails', e.target.value)}
+                className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed"
+              />
+            )}
+          </section>
+
+          {/* ════ BEHAVIOR ════ */}
+          <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-5">
+            <h2 className="font-headline text-lg font-bold text-primary">🐾 Поведение</h2>
+
+            {/* Mood */}
+            <div className="flex flex-col gap-2">
+              <p className="font-label text-xs font-semibold text-secondary uppercase tracking-wide">Настроение</p>
+              <div className="flex gap-3">
+                {([
+                  { val: 'happy',   emoji: '😊', label: 'Весёлая' },
+                  { val: 'neutral', emoji: '😐', label: 'Нейтральная' },
+                  { val: 'lethargic', emoji: '😔', label: 'Вялая' },
+                ] as { val: DiaryEntry['behavior']['mood']; emoji: string; label: string }[]).map(({ val, emoji, label }) => {
+                  const active = form.behavior.mood === val
+                  return (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => patchBehavior('mood', val)}
+                      className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all
+                        ${active ? 'bg-primary-fixed shadow-card' : 'bg-surface-container-low hover:bg-surface-container'}`}
+                    >
+                      <span className="text-3xl select-none">{emoji}</span>
+                      <span className={`font-label text-xs ${active ? 'text-on-primary-fixed-variant font-semibold' : 'text-on-surface-variant'}`}>{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Appetite */}
+            <div className="flex flex-col gap-2">
+              <p className="font-label text-xs font-semibold text-secondary uppercase tracking-wide">Аппетит</p>
+              <div className="flex bg-surface-container p-1 rounded-xl">
+                {([
+                  { val: 'normal',  label: 'Норма' },
+                  { val: 'reduced', label: 'Снижен' },
+                  { val: 'refused', label: 'Отказ' },
+                ] as { val: DiaryEntry['behavior']['appetite']; label: string }[]).map(({ val, label }) => {
+                  const active = form.behavior.appetite === val
+                  return (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => patchBehavior('appetite', val)}
+                      className={`flex-1 py-2.5 text-sm rounded-lg font-label font-medium transition-all
+                        ${active
+                          ? 'bg-surface-container-lowest shadow-card text-primary'
+                          : 'text-on-surface-variant hover:bg-surface-container-lowest/50'}`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* ════ PHOTO ════ */}
+          <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
+            <h2 className="font-headline text-lg font-bold text-primary">📸 Фото</h2>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handlePhoto}
+            />
+            {form.photoBase64 ? (
+              <div className="relative">
+                <img
+                  src={form.photoBase64}
+                  alt="Фото"
+                  className="w-full rounded-xl object-cover max-h-64"
+                />
+                <button
+                  type="button"
+                  onClick={() => patch('photoBase64', null)}
+                  className="absolute top-2 right-2 w-8 h-8 bg-inverse-surface/70 rounded-full flex items-center justify-center text-inverse-on-surface hover:bg-inverse-surface transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="flex flex-col items-center gap-3 py-8 border-2 border-dashed border-outline-variant/40 rounded-xl text-primary hover:bg-surface-container-low transition-colors"
+              >
+                <span className="material-symbols-outlined text-[36px] text-primary-container">photo_camera</span>
+                <span className="font-label font-medium text-sm">Прикрепить фото</span>
+              </button>
+            )}
+          </section>
+
+          {/* ════ NOTES ════ */}
+          <section className="flex flex-col gap-2">
+            <h2 className="font-headline text-base font-bold text-primary px-1">📝 Заметки</h2>
+            <textarea
+              rows={4}
+              placeholder="Любые наблюдения..."
+              value={form.notes}
+              onChange={e => patch('notes', e.target.value)}
+              className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed resize-none"
+            />
+          </section>
+
+        </div>
+      </div>
+
+      {/* ── Fixed Save Button ── */}
+      <div
+        className="fixed bottom-0 left-0 w-full px-4 py-3 bg-surface/80 backdrop-blur-xl z-30 flex justify-center"
+        style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+      >
+        <button
+          onClick={handleSave}
+          className="w-full max-w-lg bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold text-lg py-4 rounded-full shadow-float hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        >
+          <span className="material-symbols-outlined icon-fill text-[22px]">check_circle</span>
+          Сохранить запись
+        </button>
+      </div>
+    </div>
+  )
+}
