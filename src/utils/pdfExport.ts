@@ -1,25 +1,34 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TDocumentDefinitions = any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Content = any
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { DiaryEntry, PetProfile } from '../types'
 import { getEntryStatus } from './status'
 import { format } from 'date-fns'
 
-function bristolLabel(n: number | null): string {
+const GREEN       = '#4d644b'
+const GREEN_MID   = '#6a8c68'
+const GREEN_LIGHT = '#daeeda'
+const GREEN_PALE  = '#f0f7f0'
+const GREEN_TEXT  = '#c8e6c0'
+const GRAY_BG     = '#f4f3ef'
+const GRAY_LINE   = '#dcdad6'
+const GRAY_ROW    = '#f7f6f2'
+const TEXT        = '#1b1c1a'
+const TEXT_MUTED  = '#5c5f5a'
+const WHITE       = '#ffffff'
+const AMBER       = '#b06000'
+const AMBER_PALE  = '#fef8ee'
+const RED         = '#ba1a1a'
+const RED_PALE    = '#fff0f0'
+
+function bristolShort(n: number | null): string {
   if (n === null) return '-'
-  const map: Record<number, string> = {
-    1: '1 - Hard lumps', 2: '2 - Lumpy', 3: '3 - Cracked',
-    4: '4 - Normal',     5: '5 - Soft pieces', 6: '6 - Mushy', 7: '7 - Liquid',
-  }
-  return map[n] ?? String(n)
+  return `B${n}`
 }
 
 function colorLabel(c: string | null): string {
   if (!c) return '-'
   const map: Record<string, string> = {
-    brown: 'Brown', 'yellow-green': 'Yellow-green',
-    green: 'Green', black: 'Black', red: 'Red',
+    brown: 'Brown', 'yellow-green': 'Yel-Grn', green: 'Green', black: 'Black', red: 'Red',
   }
   return map[c] ?? c
 }
@@ -32,9 +41,7 @@ function appetiteLabel(a: string): string {
   return a === 'normal' ? 'Normal' : a === 'reduced' ? 'Reduced' : 'Refused'
 }
 
-function bool(v: boolean): string { return v ? 'Yes' : 'No' }
-
-function entryStatus(entry: DiaryEntry): string {
+function entryStatusLabel(entry: DiaryEntry): string {
   const s = getEntryStatus(entry)
   return s === 'green' ? 'Normal' : s === 'yellow' ? 'Mild' : 'Episode'
 }
@@ -49,152 +56,261 @@ export interface ExportOptions {
   includeStats: boolean
 }
 
-const GREEN = '#4d644b'
-const GREEN_LIGHT = '#cfead2'
-const GRAY_BG = '#efeeea'
-const TEXT = '#1b1c1a'
+// Load Roboto (with Cyrillic) into jsPDF from pdfmake's bundled VFS
+async function loadRoboto(doc: jsPDF): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mod = (await import('pdfmake/build/vfs_fonts')) as any
+  const pdfFonts = mod.default ?? mod
+  const vfs = pdfFonts.pdfMake?.vfs ?? pdfFonts.vfs ?? pdfFonts
+
+  doc.addFileToVFS('Roboto-Regular.ttf', vfs['Roboto-Regular.ttf'])
+  doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal')
+  doc.addFileToVFS('Roboto-Medium.ttf', vfs['Roboto-Medium.ttf'])
+  doc.addFont('Roboto-Medium.ttf', 'Roboto', 'bold')
+  doc.setFont('Roboto', 'normal')
+}
 
 export async function generateVetPDF(opts: ExportOptions): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfMakeModule = (await import('pdfmake/build/pdfmake')) as any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfFontsModule = (await import('pdfmake/build/vfs_fonts')) as any
-  const pdfMake = pdfMakeModule.default ?? pdfMakeModule
-  const pdfFonts = pdfFontsModule.default ?? pdfFontsModule
-  pdfMake.vfs = pdfFonts.pdfMake?.vfs ?? pdfFonts.vfs ?? pdfFonts
-
   const { entries, pet, fromDate, toDate, includePhotos, includeNotes, includeStats } = opts
+
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  await loadRoboto(doc)
+
+  const PAGE_W = doc.internal.pageSize.getWidth()
+  const PAGE_H = doc.internal.pageSize.getHeight()
+  const MARGIN = 32
+  const CW = PAGE_W - MARGIN * 2
 
   const filtered = entries
     .filter(e => e.date >= fromDate && e.date <= toDate)
     .sort((a, b) => a.date.localeCompare(b.date))
 
-  const content: Content[] = []
+  let y = MARGIN
 
-  // ── Header ──
-  content.push({
-    table: {
-      widths: ['*'],
-      body: [[{
-        stack: [
-          { text: `${pet.name} Health Journal`, fontSize: 18, bold: true, color: 'white' },
-          { text: `Digestive Health Report  |  Generated: ${format(new Date(), 'dd.MM.yyyy')}`, fontSize: 10, color: 'white', margin: [0, 4, 0, 0] },
-          { text: `Period: ${fromDate} — ${toDate}`, fontSize: 10, color: 'white', margin: [0, 2, 0, 0] },
-        ],
-        fillColor: GREEN,
-        border: [false, false, false, false],
-        margin: [4, 10, 4, 10],
-      }]],
-    },
-    layout: 'noBorders',
-    margin: [0, 0, 0, 10],
-  })
+  // ── Header block ──────────────────────────────────────────────────────────
+  doc.setFillColor(GREEN)
+  doc.roundedRect(MARGIN, y, CW, 72, 10, 10, 'F')
 
-  // ── Dog Info ──
+  doc.setFont('Roboto', 'bold')
+  doc.setFontSize(17)
+  doc.setTextColor(WHITE)
+  doc.text(`${pet.name} — Health Journal`, MARGIN + 16, y + 28)
+
+  doc.setFont('Roboto', 'normal')
+  doc.setFontSize(9)
+  doc.setTextColor(GREEN_TEXT)
+  doc.text(
+    `Digestive Health Report   |   Generated: ${format(new Date(), 'dd.MM.yyyy')}`,
+    MARGIN + 16, y + 48
+  )
+  doc.text(`Period: ${fromDate}  —  ${toDate}`, MARGIN + 16, y + 62)
+
+  y += 72 + 10
+
+  // ── Dog info block ────────────────────────────────────────────────────────
+  const hasNotes = pet.vetNotes.trim().length > 0
   const dobFormatted = pet.birthday ? pet.birthday.split('-').reverse().join('.') : '-'
-  const infoRows: Content[] = [
-    { text: pet.name, fontSize: 11, bold: true, color: TEXT },
-    {
-      text: `Breed: ${pet.breed}   |   DOB: ${dobFormatted}${pet.food ? `   |   Diet: ${pet.food}` : ''}`,
-      fontSize: 9, color: TEXT, margin: [0, 4, 0, 0],
-    },
-  ]
-  if (pet.vetNotes.trim()) {
-    infoRows.push({ text: `Medical notes: ${pet.vetNotes}`, fontSize: 9, color: TEXT, margin: [0, 4, 0, 0] })
-  }
-  content.push({
-    table: {
-      widths: ['*'],
-      body: [[{ stack: infoRows, fillColor: GREEN_LIGHT, border: [false, false, false, false], margin: [6, 8, 6, 8] }]],
-    },
-    layout: 'noBorders',
-    margin: [0, 0, 0, 8],
-  })
+  const infoSubline = `Breed: ${pet.breed}   |   DOB: ${dobFormatted}${pet.food ? `   |   Diet: ${pet.food}` : ''}`
+  const notesLines = hasNotes ? doc.splitTextToSize(`Medical notes: ${pet.vetNotes}`, CW - 28) : []
+  const infoHeight = 38 + (hasNotes ? 14 + notesLines.length * 11 : 6)
 
-  // ── Stats summary ──
+  doc.setFillColor(GREEN_LIGHT)
+  doc.roundedRect(MARGIN, y, CW, infoHeight, 10, 10, 'F')
+
+  doc.setFont('Roboto', 'bold')
+  doc.setFontSize(11)
+  doc.setTextColor(TEXT)
+  doc.text(pet.name, MARGIN + 14, y + 20)
+
+  doc.setFont('Roboto', 'normal')
+  doc.setFontSize(9)
+  doc.setTextColor(TEXT_MUTED)
+  doc.text(infoSubline, MARGIN + 14, y + 36)
+
+  if (hasNotes) {
+    doc.text(notesLines, MARGIN + 14, y + 52)
+  }
+
+  y += infoHeight + 10
+
+  // ── Stats cards ───────────────────────────────────────────────────────────
   if (includeStats && filtered.length > 0) {
-    const total = filtered.length
-    const good = filtered.filter(e => getEntryStatus(e) === 'green').length
+    const total    = filtered.length
+    const good     = filtered.filter(e => getEntryStatus(e) === 'green').length
     const episodes = filtered.filter(e => getEntryStatus(e) === 'red').length
-    const mild = total - good - episodes
-    content.push({
-      table: {
-        widths: ['*'],
-        body: [[{
-          text: `Total entries: ${total}     Good days: ${good}     Mild symptoms: ${mild}     Episodes: ${episodes}`,
-          fontSize: 9, bold: true, color: TEXT,
-          fillColor: GRAY_BG, border: [false, false, false, false],
-          margin: [6, 6, 6, 6],
-        }]],
-      },
-      layout: 'noBorders',
-      margin: [0, 0, 0, 10],
+    const mild     = total - good - episodes
+
+    const gap = 10
+    const cardW = (CW - gap * 3) / 4
+    const cardH = 62
+
+    const cards = [
+      { label: 'Total entries', value: total,    bg: GRAY_BG,    fg: TEXT },
+      { label: 'Good days',     value: good,     bg: GREEN_PALE, fg: GREEN },
+      { label: 'Mild symptoms', value: mild,     bg: AMBER_PALE, fg: AMBER },
+      { label: 'Episodes',      value: episodes, bg: RED_PALE,   fg: RED },
+    ]
+
+    cards.forEach((card, i) => {
+      const x = MARGIN + (cardW + gap) * i
+
+      doc.setFillColor(card.bg)
+      doc.roundedRect(x, y, cardW, cardH, 8, 8, 'F')
+
+      doc.setFont('Roboto', 'bold')
+      doc.setFontSize(22)
+      doc.setTextColor(card.fg)
+      const valueStr = String(card.value)
+      const valueW = doc.getTextWidth(valueStr)
+      doc.text(valueStr, x + cardW / 2 - valueW / 2, y + 32)
+
+      doc.setFont('Roboto', 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(TEXT_MUTED)
+      const labelW = doc.getTextWidth(card.label)
+      doc.text(card.label, x + cardW / 2 - labelW / 2, y + 50)
     })
+
+    y += cardH + 14
   }
 
-  // ── Data table ──
-  const tableHeaders = ['Date', 'Walks', 'Bristol', 'Color', 'Mucus', 'Blood', 'Mood', 'Appetite', 'Status']
-  const tableRows = filtered.map(e => {
-    const walks = [e.stool.morning, e.stool.afternoon, e.stool.evening].filter(w => w.occurred)
-    const bristols = walks.map(w => bristolLabel(w.bristolScale)).join('\n') || '-'
-    const colors = [...new Set(walks.map(w => colorLabel(w.color)))].filter(c => c !== '-').join(', ') || '-'
-    const status = entryStatus(e)
+  // ── Data table ────────────────────────────────────────────────────────────
+  const head = [['Date', 'Stool', 'Bristol', 'Color', 'Mucus', 'Blood', 'Mood', 'Appetite', 'Status']]
+  const body = filtered.map(e => {
+    const walks = [e.stool.morning, e.stool.afternoon, e.stool.evening].filter(w => w.hadStool)
+    const bristols = walks.map(w => bristolShort(w.bristolScale)).join(', ') || '-'
+    const colors   = [...new Set(walks.map(w => colorLabel(w.color)))].filter(c => c !== '-').join(', ') || '-'
+    const mucus    = walks.some(w => w.mucus) ? 'Yes' : 'No'
+    const blood    = walks.some(w => w.visibleBlood) ? 'Yes' : 'No'
     return [
       e.date,
       String(walks.length),
       bristols,
       colors,
-      bool(walks.some(w => w.mucus)),
-      bool(walks.some(w => w.visibleBlood)),
+      mucus,
+      blood,
       moodLabel(e.behavior.mood),
       appetiteLabel(e.behavior.appetite),
-      { text: status, bold: true, color: status === 'Episode' ? '#ba1a1a' : status === 'Normal' ? GREEN : TEXT },
+      entryStatusLabel(e),
     ]
   })
 
-  content.push({
-    table: {
-      headerRows: 1,
-      widths: [32, 18, 52, 38, 20, 20, 30, 30, 28],
-      body: [
-        tableHeaders.map(h => ({ text: h, bold: true, fontSize: 8, color: 'white', fillColor: GREEN })),
-        ...tableRows.map((row, i) => row.map(cell => ({
-          ...(typeof cell === 'string' ? { text: cell } : cell),
-          fontSize: 8,
-          fillColor: i % 2 === 1 ? '#f5f3ef' : 'white',
-        }))),
-      ],
+  autoTable(doc, {
+    startY: y,
+    head,
+    body,
+    theme: 'plain',
+    styles: {
+      font: 'Roboto',
+      fontSize: 8,
+      textColor: TEXT,
+      cellPadding: 6,
+      lineColor: GRAY_LINE,
+      lineWidth: 0,
     },
-    layout: {
-      hLineWidth: () => 0.3,
-      vLineWidth: () => 0.3,
-      hLineColor: () => '#dcdad6',
-      vLineColor: () => '#dcdad6',
+    headStyles: {
+      font: 'Roboto',
+      fontStyle: 'bold',
+      fillColor: GREEN,
+      textColor: WHITE,
+      fontSize: 8,
+      halign: 'left',
+      cellPadding: { top: 7, bottom: 7, left: 6, right: 6 },
     },
-    margin: [0, 0, 0, 0],
+    bodyStyles: {
+      lineColor: GRAY_LINE,
+      lineWidth: { top: 0.3, bottom: 0, left: 0, right: 0 },
+    },
+    alternateRowStyles: { fillColor: GRAY_ROW },
+    columnStyles: {
+      0: { cellWidth: 82 },
+      1: { cellWidth: 36, halign: 'center' },
+      2: { cellWidth: 52 },
+      3: { cellWidth: 74 },
+      4: { cellWidth: 44, halign: 'center' },
+      5: { cellWidth: 44, halign: 'center' },
+      6: { cellWidth: 58 },
+      7: { cellWidth: 68 },
+      8: { cellWidth: 73, fontStyle: 'bold' },
+    },
+    margin: { left: MARGIN, right: MARGIN, bottom: MARGIN + 20 },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    didParseCell: (data: any) => {
+      if (data.section !== 'body') return
+      const col = data.column.index
+      const val = String(data.cell.raw ?? '')
+      if (col === 4 && val === 'Yes') data.cell.styles.textColor = AMBER
+      if (col === 5 && val === 'Yes') data.cell.styles.textColor = RED
+      if (col === 8) {
+        if (val === 'Episode') data.cell.styles.textColor = RED
+        else if (val === 'Normal') data.cell.styles.textColor = GREEN
+        else if (val === 'Mild') data.cell.styles.textColor = AMBER
+      }
+    },
   })
 
-  // ── Notes pages ──
+  // ── Notes pages ───────────────────────────────────────────────────────────
   if (includeNotes) {
     const withNotes = filtered.filter(e => e.notes.trim())
     if (withNotes.length > 0) {
-      content.push({ text: 'Notes', fontSize: 13, bold: true, color: 'white', background: GREEN, pageBreak: 'before', margin: [0, 0, 0, 8] })
+      doc.addPage()
+      let ny = MARGIN + 10
+
+      doc.setFont('Roboto', 'bold')
+      doc.setFontSize(14)
+      doc.setTextColor(GREEN)
+      doc.text('Notes', MARGIN, ny)
+      ny += 22
+
       withNotes.forEach(e => {
-        content.push({ text: e.date, fontSize: 9, bold: true, color: GREEN, margin: [0, 6, 0, 2] })
-        content.push({ text: e.notes, fontSize: 9, color: TEXT, margin: [0, 0, 0, 4] })
+        doc.setFont('Roboto', 'bold')
+        doc.setFontSize(9)
+        doc.setTextColor(GREEN_MID)
+        doc.text(e.date, MARGIN, ny)
+        ny += 13
+
+        doc.setFont('Roboto', 'normal')
+        doc.setFontSize(9)
+        doc.setTextColor(TEXT)
+        const lines = doc.splitTextToSize(e.notes, CW)
+        doc.text(lines, MARGIN, ny)
+        ny += lines.length * 11 + 10
+
+        if (ny > PAGE_H - MARGIN - 30) {
+          doc.addPage()
+          ny = MARGIN + 10
+        }
       })
     }
   }
 
-  // ── Photos pages ──
+  // ── Photos pages ──────────────────────────────────────────────────────────
   if (includePhotos) {
     const withPhotos = filtered.filter(e => e.photoBase64)
     if (withPhotos.length > 0) {
-      content.push({ text: 'Photos', fontSize: 13, bold: true, color: 'white', background: GREEN, pageBreak: 'before', margin: [0, 0, 0, 8] })
+      doc.addPage()
+      let py = MARGIN + 10
+
+      doc.setFont('Roboto', 'bold')
+      doc.setFontSize(14)
+      doc.setTextColor(GREEN)
+      doc.text('Photos', MARGIN, py)
+      py += 22
+
       withPhotos.forEach(e => {
-        content.push({ text: e.date, fontSize: 9, bold: true, color: TEXT, margin: [0, 6, 0, 2] })
+        if (py > PAGE_H - MARGIN - 200) {
+          doc.addPage()
+          py = MARGIN + 10
+        }
+        doc.setFont('Roboto', 'bold')
+        doc.setFontSize(9)
+        doc.setTextColor(TEXT_MUTED)
+        doc.text(e.date, MARGIN, py)
+        py += 14
+
         try {
-          content.push({ image: e.photoBase64!, width: 140, margin: [0, 0, 0, 8] })
+          doc.addImage(e.photoBase64!, 'JPEG', MARGIN, py, 160, 160)
+          py += 172
         } catch {
           // skip broken image
         }
@@ -202,20 +318,18 @@ export async function generateVetPDF(opts: ExportOptions): Promise<void> {
     }
   }
 
-  const docDef: TDocumentDefinitions = {
-    pageSize: 'A4',
-    pageMargins: [14, 14, 14, 20],
-    defaultStyle: { font: 'Roboto', fontSize: 10, color: TEXT },
-    content,
-    footer: (currentPage: number, pageCount: number) => ({
-      text: `${pet.name} Health Journal  |  Page ${currentPage} of ${pageCount}  |  For veterinary use`,
-      alignment: 'center',
-      fontSize: 7,
-      color: '#737971',
-      margin: [0, 4, 0, 0],
-    }),
+  // ── Footer on every page ──────────────────────────────────────────────────
+  const pageCount = doc.getNumberOfPages()
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i)
+    doc.setFont('Roboto', 'normal')
+    doc.setFontSize(7)
+    doc.setTextColor(TEXT_MUTED)
+    const footerText = `${pet.name} Health Journal  |  Page ${i} of ${pageCount}  |  For veterinary use`
+    const footerW = doc.getTextWidth(footerText)
+    doc.text(footerText, PAGE_W / 2 - footerW / 2, PAGE_H - 18)
   }
 
   const filename = `${pet.name.toLowerCase()}-health-${fromDate}-${toDate}.pdf`
-  pdfMake.createPdf(docDef).download(filename)
+  doc.save(filename)
 }

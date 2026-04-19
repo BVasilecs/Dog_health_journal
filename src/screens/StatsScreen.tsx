@@ -190,7 +190,7 @@ export default function StatsScreen() {
                         </p>
                         <p className="font-label text-xs text-on-surface-variant truncate">
                           {[entry.stool.morning, entry.stool.afternoon, entry.stool.evening]
-                            .filter(w => w.occurred && w.bristolScale)
+                            .filter(w => w.hadStool && w.bristolScale)
                             .map(w => `Б${w.bristolScale}`)
                             .join(' / ') || 'Без данных'}
                           {[entry.stool.morning, entry.stool.afternoon, entry.stool.evening].some(w => w.visibleBlood) && ' · кровь'}

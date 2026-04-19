@@ -55,7 +55,7 @@ function WalkSection({
   }
 
   return (
-    <div className={`rounded-2xl overflow-hidden transition-all duration-300 ${walk.occurred ? 'bg-surface-container ring-1 ring-outline-variant/30 shadow-card' : 'bg-surface-container-low'}`}>
+    <div className={`rounded-2xl overflow-hidden transition-all duration-300 ${walk.hadStool ? 'bg-surface-container ring-1 ring-outline-variant/30 shadow-card' : 'bg-surface-container-low'}`}>
       {/* Walk header */}
       <div className="flex items-center gap-3 p-4">
         <span className="text-2xl select-none">{meta.icon}</span>
@@ -73,13 +73,13 @@ function WalkSection({
         </div>
         {/* Occurred toggle */}
         <div className="flex items-center gap-2">
-          <span className="font-label text-xs text-on-surface-variant">Была</span>
-          <Toggle checked={walk.occurred} onChange={v => patch('occurred', v)} />
+          <span className="font-label text-xs text-on-surface-variant">Был стул</span>
+          <Toggle checked={walk.hadStool} onChange={v => patch('hadStool', v)} />
         </div>
       </div>
 
       {/* Details — smooth expand/collapse via grid-template-rows */}
-      <div className="walk-expand" data-open={walk.occurred ? 'true' : 'false'}>
+      <div className="walk-expand" data-open={walk.hadStool ? 'true' : 'false'}>
         <div className="overflow-hidden">
           <div className="px-4 pb-4 flex flex-col gap-4 border-t border-outline-variant/20 pt-4">
 

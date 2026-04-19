@@ -175,12 +175,12 @@ export default function CalendarScreen() {
                       { key: 'morning',   label: '🌅', w: selectedEntry.stool.morning },
                       { key: 'afternoon', label: '☀️', w: selectedEntry.stool.afternoon },
                       { key: 'evening',   label: '🌙', w: selectedEntry.stool.evening },
-                    ].filter(x => x.w.occurred)
+                    ].filter(x => x.w.hadStool)
                     const walksCount = walks.length
                     return (
                       <div className="grid grid-cols-3 gap-2">
                         <div className="bg-surface-container-low rounded-xl p-3 text-center">
-                          <p className="font-label text-[10px] text-on-surface-variant mb-1">Прогулок</p>
+                          <p className="font-label text-[10px] text-on-surface-variant mb-1">Стул</p>
                           <p className="font-headline font-bold text-xl text-on-surface">{walksCount}</p>
                         </div>
                         <div className="bg-surface-container-low rounded-xl p-3 text-center">
@@ -202,7 +202,7 @@ export default function CalendarScreen() {
                   {/* Flags */}
                   <div className="flex flex-wrap gap-2">
                     {[selectedEntry.stool.morning, selectedEntry.stool.afternoon, selectedEntry.stool.evening]
-                      .filter(w => w.occurred && w.color)
+                      .filter(w => w.hadStool && w.color)
                       .slice(0, 1)
                       .map((w, i) => w.color && (
                         <span key={i} className="flex items-center gap-1.5 bg-surface-container-low px-3 py-1 rounded-full font-label text-xs">
@@ -210,9 +210,9 @@ export default function CalendarScreen() {
                           {STOOL_COLORS[w.color]?.label}
                         </span>
                       ))}
-                    {[selectedEntry.stool.morning, selectedEntry.stool.afternoon, selectedEntry.stool.evening].some(w => w.occurred && w.mucus) &&
+                    {[selectedEntry.stool.morning, selectedEntry.stool.afternoon, selectedEntry.stool.evening].some(w => w.hadStool && w.mucus) &&
                       <span className="bg-tertiary-fixed text-on-tertiary-fixed px-3 py-1 rounded-full font-label text-xs">Слизь</span>}
-                    {[selectedEntry.stool.morning, selectedEntry.stool.afternoon, selectedEntry.stool.evening].some(w => w.occurred && w.visibleBlood) &&
+                    {[selectedEntry.stool.morning, selectedEntry.stool.afternoon, selectedEntry.stool.evening].some(w => w.hadStool && w.visibleBlood) &&
                       <span className="bg-error-container text-on-error-container px-3 py-1 rounded-full font-label text-xs">Кровь</span>}
                     {selectedEntry.stomach.rumbling &&
                       <span className="bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded-full font-label text-xs">Урчание</span>}

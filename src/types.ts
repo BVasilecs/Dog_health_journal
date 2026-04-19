@@ -1,6 +1,6 @@
 export interface StoolWalk {
   time: string
-  occurred: boolean
+  hadStool: boolean
   bristolScale: 1 | 2 | 3 | 4 | 5 | 6 | 7 | null
   color: 'brown' | 'yellow-green' | 'green' | 'black' | 'red' | null
   mucus: boolean

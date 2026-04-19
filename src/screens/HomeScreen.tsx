@@ -5,7 +5,7 @@ import { format, subDays, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
 function bestWalk(entry: DiaryEntry) {
-  const walks = [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(w => w.occurred)
+  const walks = [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(w => w.hadStool)
   if (walks.length === 0) return null
   // Return the walk with the most notable bristol scale (furthest from 4)
   return walks.reduce((a, b) => {
@@ -16,7 +16,7 @@ function bestWalk(entry: DiaryEntry) {
 }
 
 function anyFlag(entry: DiaryEntry, flag: 'mucus' | 'visibleBlood') {
-  return [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].some(w => w.occurred && w[flag])
+  return [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].some(w => w.hadStool && w[flag])
 }
 
 function moodEmoji(mood: string) {
@@ -168,11 +168,11 @@ export default function HomeScreen() {
                         <div className="flex items-center gap-2 flex-wrap">
                           {(() => {
                             const w = bestWalk(entry)
-                            const walksCount = [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(x => x.occurred).length
+                            const walksCount = [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(x => x.hadStool).length
                             return (
                               <>
                                 <span className="font-headline font-bold text-on-surface text-sm">
-                                  {walksCount > 0 ? `${walksCount} прогул.` : 'Нет прогулок'}
+                                  {walksCount > 0 ? `${walksCount} стул.` : 'Нет стула'}
                                   {w?.bristolScale ? ` · Б${w.bristolScale}` : ''}
                                 </span>
                                 {w?.color && (

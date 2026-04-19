@@ -87,7 +87,7 @@ const AppContext = createContext<AppContextValue | null>(null)
 // ── Migration: handle old format entries ───────────────────────────────────
 
 function blankWalk(time: string): StoolWalk {
-  return { time, occurred: false, bristolScale: null, color: null, mucus: false, strongSmell: false, visibleBlood: false }
+  return { time, hadStool: false, bristolScale: null, color: null, mucus: false, strongSmell: false, visibleBlood: false }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -100,7 +100,7 @@ function migrateEntry(raw: any): DiaryEntry {
       stool: {
         morning: {
           time: '08:00',
-          occurred: old.timesPerDay > 0,
+          hadStool: old.timesPerDay > 0,
           bristolScale: old.bristolScale,
           color: old.color,
           mucus: old.mucus,

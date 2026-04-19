@@ -1,7 +1,7 @@
 import { DiaryEntry, EntryStatus, StoolWalk } from '../types'
 
 function walksOccurred(entry: DiaryEntry): StoolWalk[] {
-  return [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(w => w.occurred)
+  return [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(w => w.hadStool)
 }
 
 export function getEntryStatus(entry: DiaryEntry): EntryStatus {
@@ -18,11 +18,11 @@ export function getEntryStatus(entry: DiaryEntry): EntryStatus {
     behavior.appetite === 'refused'
   ) return 'red'
 
-  // Green: all occurred walks are Bristol 3-4, no mucus, no blood, no rumbling
+  // Green: all occurred walks are Bristol 2-4, no mucus, no blood, no rumbling
   if (walks.length > 0) {
     const allGood = walks.every(
       w =>
-        (w.bristolScale === 3 || w.bristolScale === 4) &&
+        (w.bristolScale === 2 || w.bristolScale === 3 || w.bristolScale === 4) &&
         !w.mucus &&
         !w.visibleBlood
     )
