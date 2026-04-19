@@ -183,26 +183,39 @@ export default function PetSettingsScreen() {
 
           {/* Avatar picker */}
           <div className="flex justify-center pt-2">
-            <button
-              type="button"
-              onClick={() => avatarInputRef.current?.click()}
-              className="relative group"
-            >
-              <div className="w-24 h-24 rounded-full overflow-hidden bg-primary-fixed flex items-center justify-center shadow-card border-4 border-surface-container-lowest">
-                {form.avatarBase64
-                  ? <img src={form.avatarBase64} className="w-full h-full object-cover" />
-                  : <span className="text-5xl select-none">🐶</span>
-                }
-              </div>
-              {/* Hover overlay */}
-              <div className="absolute inset-0 rounded-full flex items-center justify-center bg-inverse-surface/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
-                <span className="material-symbols-outlined text-white text-[26px] icon-fill">photo_camera</span>
-              </div>
-              {/* Edit badge */}
-              <div className="absolute bottom-0 right-0 w-7 h-7 bg-primary rounded-full flex items-center justify-center shadow-card border-2 border-surface-container-lowest">
-                <span className="material-symbols-outlined text-on-primary text-[14px] icon-fill">edit</span>
-              </div>
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="relative group"
+              >
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-primary-fixed flex items-center justify-center shadow-card border-4 border-surface-container-lowest">
+                  {form.avatarBase64
+                    ? <img src={form.avatarBase64} className="w-full h-full object-cover" />
+                    : <span className="text-5xl select-none">🐶</span>
+                  }
+                </div>
+                {/* Hover overlay */}
+                <div className="absolute inset-0 rounded-full flex items-center justify-center bg-inverse-surface/40 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
+                  <span className="material-symbols-outlined text-white text-[26px] icon-fill">photo_camera</span>
+                </div>
+                {/* Edit badge */}
+                <div className="absolute bottom-0 right-0 w-7 h-7 bg-primary rounded-full flex items-center justify-center shadow-card border-2 border-surface-container-lowest">
+                  <span className="material-symbols-outlined text-on-primary text-[14px] icon-fill">edit</span>
+                </div>
+              </button>
+              {/* Remove badge — only shown when a photo is set */}
+              {form.avatarBase64 && (
+                <button
+                  type="button"
+                  onClick={() => patch('avatarBase64', null)}
+                  className="absolute top-0 right-0 w-7 h-7 bg-error rounded-full flex items-center justify-center shadow-card border-2 border-surface-container-lowest"
+                  aria-label="Remove photo"
+                >
+                  <span className="material-symbols-outlined text-on-error text-[14px]">close</span>
+                </button>
+              )}
+            </div>
             <input
               ref={avatarInputRef}
               type="file"

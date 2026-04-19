@@ -176,12 +176,25 @@ export default function CalendarScreen() {
                       { key: 'afternoon', label: '☀️', w: selectedEntry.stool.afternoon },
                       { key: 'evening',   label: '🌙', w: selectedEntry.stool.evening },
                     ].filter(x => x.w.hadStool)
-                    const walksCount = walks.length
+
+                    const prevDate = new Date(selectedDate!)
+                    prevDate.setDate(prevDate.getDate() - 1)
+                    const prevEntry = getEntryForDate(prevDate.toISOString().split('T')[0])
+                    let fastLabel = '—'
+                    if (selectedEntry.food.morningFed && prevEntry?.food.eveningFed) {
+                      const [pH, pM] = prevEntry.food.eveningTime.split(':').map(Number)
+                      const [cH, cM] = selectedEntry.food.morningTime.split(':').map(Number)
+                      const diff = (cH * 60 + cM + 24 * 60) - (pH * 60 + pM)
+                      const h = Math.floor(diff / 60)
+                      const m = diff % 60
+                      fastLabel = m > 0 ? `${h}ч ${m}м` : `${h}ч`
+                    }
+
                     return (
                       <div className="grid grid-cols-3 gap-2">
                         <div className="bg-surface-container-low rounded-xl p-3 text-center">
-                          <p className="font-label text-[10px] text-on-surface-variant mb-1">Стул</p>
-                          <p className="font-headline font-bold text-xl text-on-surface">{walksCount}</p>
+                          <p className="font-label text-[10px] text-on-surface-variant mb-1">Ночная пауза</p>
+                          <p className="font-headline font-bold text-xl text-on-surface">{fastLabel}</p>
                         </div>
                         <div className="bg-surface-container-low rounded-xl p-3 text-center">
                           <p className="font-label text-[10px] text-on-surface-variant mb-1">Бристоль</p>

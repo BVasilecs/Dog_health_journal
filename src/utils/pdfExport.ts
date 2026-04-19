@@ -175,13 +175,31 @@ export async function generateVetPDF(opts: ExportOptions): Promise<void> {
   }
 
   // ── Data table ────────────────────────────────────────────────────────────
-  const head = [['Date', 'Stool', 'Bristol', 'Color', 'Mucus', 'Blood', 'Mood', 'Appetite', 'Status']]
+  // Build a date→entry lookup for fast previous-day access
+  const entryByDate = new Map(filtered.map(e => [e.date, e]))
+
+  function nightFastLabel(e: DiaryEntry): string {
+    if (!e.food.morningFed) return '—'
+    const prevDate = new Date(e.date)
+    prevDate.setDate(prevDate.getDate() - 1)
+    const prev = entryByDate.get(prevDate.toISOString().split('T')[0])
+    if (!prev?.food.eveningFed) return '—'
+    const [pH, pM] = prev.food.eveningTime.split(':').map(Number)
+    const [cH, cM] = e.food.morningTime.split(':').map(Number)
+    const diff = (cH * 60 + cM + 24 * 60) - (pH * 60 + pM)
+    const h = Math.floor(diff / 60)
+    const m = diff % 60
+    return m > 0 ? `${h}h ${m}m` : `${h}h`
+  }
+
+  const head = [['Date', 'Stool', 'Bristol', 'Color', 'Mucus', 'Blood', 'Fast', 'Treats', 'Mood', 'Appetite', 'Status']]
   const body = filtered.map(e => {
-    const walks = [e.stool.morning, e.stool.afternoon, e.stool.evening].filter(w => w.hadStool)
+    const walks   = [e.stool.morning, e.stool.afternoon, e.stool.evening].filter(w => w.hadStool)
     const bristols = walks.map(w => bristolShort(w.bristolScale)).join(', ') || '-'
     const colors   = [...new Set(walks.map(w => colorLabel(w.color)))].filter(c => c !== '-').join(', ') || '-'
     const mucus    = walks.some(w => w.mucus) ? 'Yes' : 'No'
     const blood    = walks.some(w => w.visibleBlood) ? 'Yes' : 'No'
+    const treats   = e.food.treatsGiven ? (e.food.treatDetails.trim() || 'Yes') : 'No'
     return [
       e.date,
       String(walks.length),
@@ -189,12 +207,16 @@ export async function generateVetPDF(opts: ExportOptions): Promise<void> {
       colors,
       mucus,
       blood,
+      nightFastLabel(e),
+      treats,
       moodLabel(e.behavior.mood),
       appetiteLabel(e.behavior.appetite),
       entryStatusLabel(e),
     ]
   })
 
+  // 11 columns, widths summing to CW (531):
+  // 72+31+44+62+36+36+40+36+48+58+68 = 531
   autoTable(doc, {
     startY: y,
     head,
@@ -204,7 +226,7 @@ export async function generateVetPDF(opts: ExportOptions): Promise<void> {
       font: 'Roboto',
       fontSize: 8,
       textColor: TEXT,
-      cellPadding: 6,
+      cellPadding: 5,
       lineColor: GRAY_LINE,
       lineWidth: 0,
     },
@@ -215,7 +237,7 @@ export async function generateVetPDF(opts: ExportOptions): Promise<void> {
       textColor: WHITE,
       fontSize: 8,
       halign: 'left',
-      cellPadding: { top: 7, bottom: 7, left: 6, right: 6 },
+      cellPadding: { top: 7, bottom: 7, left: 5, right: 5 },
     },
     bodyStyles: {
       lineColor: GRAY_LINE,
@@ -223,15 +245,18 @@ export async function generateVetPDF(opts: ExportOptions): Promise<void> {
     },
     alternateRowStyles: { fillColor: GRAY_ROW },
     columnStyles: {
-      0: { cellWidth: 82 },
-      1: { cellWidth: 36, halign: 'center' },
-      2: { cellWidth: 52 },
-      3: { cellWidth: 74 },
-      4: { cellWidth: 44, halign: 'center' },
-      5: { cellWidth: 44, halign: 'center' },
-      6: { cellWidth: 58 },
-      7: { cellWidth: 68 },
-      8: { cellWidth: 73, fontStyle: 'bold' },
+      // Fixed-width columns sized to their longest content + 10pt padding
+      0:  { cellWidth: 58 },              // "2026-04-19" ~48pt
+      1:  { cellWidth: 32, halign: 'center' }, // "Stool" header ~22pt
+      2:  { cellWidth: 36 },              // flexible: Bristol values
+      3:  { cellWidth: 72 },              // flexible: Color values
+      4:  { cellWidth: 34, halign: 'center' }, // "Mucus"/"Yes"/"No" ~24pt
+      5:  { cellWidth: 34, halign: 'center' }, // "Blood"/"Yes"/"No" ~24pt
+      6:  { cellWidth: 44, halign: 'center' }, // "12h 30m" ~34pt
+      7:  { cellWidth: 73 },              // flexible: Treats / treat details
+      8:  { cellWidth: 52 },              // "Lethargic" ~42pt
+      9:  { cellWidth: 48 },              // "Appetite" header ~38pt
+      10: { cellWidth: 48, fontStyle: 'bold' }, // "Episode" ~38pt bold
     },
     margin: { left: MARGIN, right: MARGIN, bottom: MARGIN + 20 },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -241,7 +266,8 @@ export async function generateVetPDF(opts: ExportOptions): Promise<void> {
       const val = String(data.cell.raw ?? '')
       if (col === 4 && val === 'Yes') data.cell.styles.textColor = AMBER
       if (col === 5 && val === 'Yes') data.cell.styles.textColor = RED
-      if (col === 8) {
+      if (col === 7 && val !== 'No') data.cell.styles.textColor = AMBER
+      if (col === 10) {
         if (val === 'Episode') data.cell.styles.textColor = RED
         else if (val === 'Normal') data.cell.styles.textColor = GREEN
         else if (val === 'Mild') data.cell.styles.textColor = AMBER
@@ -297,7 +323,7 @@ export async function generateVetPDF(opts: ExportOptions): Promise<void> {
       doc.text('Photos', MARGIN, py)
       py += 22
 
-      withPhotos.forEach(e => {
+      for (const e of withPhotos) {
         if (py > PAGE_H - MARGIN - 200) {
           doc.addPage()
           py = MARGIN + 10
@@ -309,12 +335,17 @@ export async function generateVetPDF(opts: ExportOptions): Promise<void> {
         py += 14
 
         try {
-          doc.addImage(e.photoBase64!, 'JPEG', MARGIN, py, 160, 160)
-          py += 172
+          const img = new Image()
+          await new Promise<void>(resolve => { img.onload = () => resolve(); img.src = e.photoBase64! })
+          const ratio = Math.min(CW / img.naturalWidth, 300 / img.naturalHeight, 1)
+          const w = Math.round(img.naturalWidth * ratio)
+          const h = Math.round(img.naturalHeight * ratio)
+          doc.addImage(e.photoBase64!, 'JPEG', MARGIN, py, w, h)
+          py += h + 12
         } catch {
           // skip broken image
         }
-      })
+      }
     }
   }
 

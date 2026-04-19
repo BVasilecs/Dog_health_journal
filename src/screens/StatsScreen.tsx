@@ -32,7 +32,7 @@ import { format, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
 export default function StatsScreen() {
-  const { state } = useApp()
+  const { state, dispatch } = useApp()
   const { entries } = state
 
   const streak = getGoodDayStreak(entries)
@@ -172,9 +172,11 @@ export default function StatsScreen() {
                 lastEpisodes.map(entry => {
                   const status = getEntryStatus(entry)
                   return (
-                    <div
+                    <button
                       key={entry.id}
-                      className="flex items-center gap-3 bg-surface-container-lowest rounded-xl px-4 py-3 shadow-card"
+                      type="button"
+                      onClick={() => dispatch({ type: 'OPEN_ENTRY', payload: entry.date })}
+                      className="flex items-center gap-3 bg-surface-container-lowest rounded-xl px-4 py-3 shadow-card w-full text-left hover:bg-surface-container transition-colors active:scale-[0.98]"
                     >
                       <div
                         className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
@@ -185,10 +187,10 @@ export default function StatsScreen() {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-headline font-semibold text-sm text-on-surface capitalize">
+                        <p className="font-headline font-bold text-sm text-on-surface capitalize">
                           {format(parseISO(entry.date), 'd MMMM yyyy', { locale: ru })}
                         </p>
-                        <p className="font-label text-xs text-on-surface-variant truncate">
+                        <p className="font-label font-bold text-xs text-on-surface-variant truncate">
                           {[entry.stool.morning, entry.stool.afternoon, entry.stool.evening]
                             .filter(w => w.hadStool && w.bristolScale)
                             .map(w => `Б${w.bristolScale}`)
@@ -201,7 +203,7 @@ export default function StatsScreen() {
                         className="w-2.5 h-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: statusColor(status) }}
                       />
-                    </div>
+                    </button>
                   )
                 })
               )}

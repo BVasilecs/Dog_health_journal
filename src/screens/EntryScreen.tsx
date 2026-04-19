@@ -122,7 +122,7 @@ function WalkSection({
                       key={key}
                       type="button"
                       onClick={() => patch('color', selected ? null : key as StoolWalk['color'])}
-                      className="flex-1 flex flex-col items-center gap-1"
+                      className="flex-1 flex flex-col items-center gap-3"
                       title={label}
                     >
                       <div
@@ -360,6 +360,68 @@ export default function EntryScreen() {
               </div>
             </div>
           </section>
+
+          {/* ════ НОЧНАЯ ПАУЗА ════ */}
+          {(() => {
+            const prevDate = new Date(date)
+            prevDate.setDate(prevDate.getDate() - 1)
+            const prevEntry = getEntryForDate(prevDate.toISOString().split('T')[0])
+
+            type FastResult =
+              | { kind: 'ok'; hours: number; minutes: number; fromTime: string; toTime: string }
+              | { kind: 'no_morning' }
+              | { kind: 'no_prev_evening' }
+
+            const result: FastResult = (() => {
+              if (!form.food.morningFed) return { kind: 'no_morning' }
+              if (!prevEntry?.food.eveningFed) return { kind: 'no_prev_evening' }
+              const [pH, pM] = prevEntry.food.eveningTime.split(':').map(Number)
+              const [cH, cM] = form.food.morningTime.split(':').map(Number)
+              const diff = (cH * 60 + cM + 24 * 60) - (pH * 60 + pM)
+              return { kind: 'ok', hours: Math.floor(diff / 60), minutes: diff % 60, fromTime: prevEntry.food.eveningTime, toTime: form.food.morningTime }
+            })()
+
+            const accentColor = result.kind === 'ok'
+              ? result.hours < 8 ? 'text-amber-600' : result.hours > 14 ? 'text-orange-600' : 'text-primary'
+              : 'text-on-surface-variant'
+
+            return (
+              <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card">
+                <h2 className="font-headline text-lg font-bold text-primary mb-4">🌙 Ночная пауза</h2>
+                {result.kind === 'ok' ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="font-label text-[10px] text-on-surface-variant uppercase tracking-wide">Вечер (вчера)</span>
+                      <span className="font-headline font-bold text-base text-on-surface">{result.fromTime}</span>
+                    </div>
+                    <div className="flex-1 flex flex-col items-center gap-0.5">
+                      <span className={`font-headline font-bold text-2xl ${accentColor}`}>
+                        {result.hours} ч{result.minutes > 0 ? ` ${result.minutes} мин` : ''}
+                      </span>
+                      <div className="w-full flex items-center gap-1">
+                        <div className="flex-1 h-px bg-outline-variant/40" />
+                        <span className="material-symbols-outlined text-outline-variant text-[14px]">arrow_forward</span>
+                        <div className="flex-1 h-px bg-outline-variant/40" />
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="font-label text-[10px] text-on-surface-variant uppercase tracking-wide">Утро (сегодня)</span>
+                      <span className="font-headline font-bold text-base text-on-surface">{result.toTime}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-surface-container-low rounded-xl p-4 flex items-center gap-3">
+                    <span className="material-symbols-outlined text-on-surface-variant text-[22px]">info</span>
+                    <p className="font-label text-sm text-on-surface-variant">
+                      {result.kind === 'no_morning'
+                        ? 'Утреннее кормление ещё не отмечено'
+                        : 'Нет данных о вечернем кормлении вчера'}
+                    </p>
+                  </div>
+                )}
+              </section>
+            )
+          })()}
 
           {/* ════ BEHAVIOR ════ */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-5">
