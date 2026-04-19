@@ -65,7 +65,7 @@ export default function HomeScreen() {
 
       <main className="px-5 pt-2 flex flex-col gap-6 max-w-lg mx-auto">
         {/* ── Dog Profile Card ── */}
-        <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-ambient relative overflow-hidden">
+        <section className="anim-fade-up delay-0 bg-surface-container-lowest rounded-2xl p-5 shadow-ambient relative overflow-hidden">
           <div className="absolute -right-6 -top-6 opacity-5 pointer-events-none select-none text-primary">
             <span className="material-symbols-outlined text-[120px] icon-fill">pets</span>
           </div>
@@ -89,7 +89,7 @@ export default function HomeScreen() {
 
         {/* ── Today's Status Card ── */}
         <section
-          className="rounded-2xl p-5 shadow-card relative overflow-hidden"
+          className="anim-fade-up delay-1 rounded-2xl p-5 shadow-card relative overflow-hidden"
           style={{ backgroundColor: todayStatus ? statusBg(todayStatus) : '#efeeea' }}
         >
           <div className="absolute -right-4 -top-4 opacity-10 pointer-events-none select-none">
@@ -120,7 +120,7 @@ export default function HomeScreen() {
         {/* ── Add / Edit Button ── */}
         <button
           onClick={() => openEntry(todayStr)}
-          className="w-full py-4 rounded-full font-headline font-bold text-lg text-on-primary shadow-float
+          className="anim-fade-up delay-2 w-full py-4 rounded-full font-headline font-bold text-lg text-on-primary shadow-float
             bg-gradient-to-r from-primary to-primary-container
             hover:opacity-90 active:scale-[0.97] transition-all duration-200 flex items-center justify-center gap-2"
         >
@@ -131,16 +131,16 @@ export default function HomeScreen() {
         </button>
 
         {/* ── Recent Entries ── */}
-        <section className="flex flex-col gap-3">
+        <section className="anim-fade-up delay-3 flex flex-col gap-3">
           <h3 className="font-headline font-bold text-xl text-on-surface px-1">Последние 7 дней</h3>
 
           {recentDays.every(d => !d.entry) ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
-              <span className="text-6xl select-none opacity-40">📓</span>
+              <span className="anim-float text-6xl select-none opacity-40">📓</span>
               <p className="font-label text-on-surface-variant text-sm">Записей пока нет.<br/>Начните вести дневник сегодня!</p>
             </div>
           ) : (
-            recentDays.map(({ dateStr, entry }) => {
+            recentDays.map(({ dateStr, entry }, index) => {
               const status = entry ? getEntryStatus(entry) : null
               const dayLabel = format(parseISO(dateStr), 'd MMM', { locale: ru })
               const weekday = format(parseISO(dateStr), 'EEE', { locale: ru })
@@ -149,7 +149,8 @@ export default function HomeScreen() {
                 <button
                   key={dateStr}
                   onClick={() => openEntry(dateStr)}
-                  className="w-full bg-surface-container-lowest rounded-2xl p-4 flex items-center gap-4 shadow-card hover:bg-surface-container-low transition-colors active:scale-[0.98] text-left"
+                  className="anim-fade-up w-full bg-surface-container-lowest rounded-2xl p-4 flex items-center gap-4 shadow-card hover:bg-surface-container-low transition-colors active:scale-[0.98] text-left"
+                  style={{ animationDelay: `${220 + index * 45}ms` }}
                 >
                   {/* Date blob */}
                   <div className="shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center"

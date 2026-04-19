@@ -99,3 +99,134 @@ h1, h2, h3, h4, h5, h6 {
 /* ── Safe area insets ─────────────────────────────────────────────────── */
 .pb-safe { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)); }
 .mb-nav  { margin-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+
+/* ── Easing tokens ────────────────────────────────────────────────────── */
+:root {
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ── Entrance: fade + slide up ────────────────────────────────────────── */
+@keyframes fadeSlideUp {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.anim-fade-up {
+  animation: fadeSlideUp 0.42s var(--ease-out-quint) both;
+}
+
+/* Stagger delay helpers */
+.delay-0  { animation-delay:   0ms; }
+.delay-1  { animation-delay:  55ms; }
+.delay-2  { animation-delay: 110ms; }
+.delay-3  { animation-delay: 165ms; }
+.delay-4  { animation-delay: 220ms; }
+.delay-5  { animation-delay: 275ms; }
+.delay-6  { animation-delay: 330ms; }
+.delay-7  { animation-delay: 385ms; }
+.delay-8  { animation-delay: 440ms; }
+
+/* ── Float: gentle levitation for empty states ────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-7px); }
+}
+.anim-float {
+  animation: float 3.2s var(--ease-out-quart) infinite;
+}
+
+/* ── Success pulse: glow on save ──────────────────────────────────────── */
+@keyframes successGlow {
+  0%   { box-shadow: 0 12px 60px rgba(67,72,65,0.10); transform: scale(1); }
+  35%  { box-shadow: 0 16px 70px rgba(77,100,75,0.32); transform: scale(1.02); }
+  100% { box-shadow: 0 12px 60px rgba(67,72,65,0.10); transform: scale(1); }
+}
+.anim-save-success {
+  animation: successGlow 0.55s var(--ease-out-quint) forwards;
+}
+
+/* ── Walk section expand via grid-template-rows ───────────────────────── */
+.walk-expand {
+  display: grid;
+  transition: grid-template-rows 0.32s var(--ease-out-quint);
+}
+.walk-expand[data-open="true"]  { grid-template-rows: 1fr; }
+.walk-expand[data-open="false"] { grid-template-rows: 0fr; }
+
+/* ── Treat input reveal ───────────────────────────────────────────────── */
+.treat-reveal {
+  display: grid;
+  transition: grid-template-rows 0.28s var(--ease-out-quint),
+              opacity 0.22s var(--ease-out-quart);
+}
+.treat-reveal[data-open="true"]  { grid-template-rows: 1fr; opacity: 1; }
+.treat-reveal[data-open="false"] { grid-template-rows: 0fr; opacity: 0; }
+
+/* ── Bristol scale selection pop ─────────────────────────────────────── */
+@keyframes bristolPop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.07); }
+  100% { transform: scale(1.04); }
+}
+.anim-bristol-selected {
+  animation: bristolPop 0.22s var(--ease-out-quint) forwards;
+}
+
+/* ── Icon fill: smooth FILL axis interpolation ────────────────────────── */
+.icon-fill-anim {
+  transition: font-variation-settings 0.22s var(--ease-out-quart);
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+.icon-fill-anim.icon-fill {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ── Check mark scale-in ──────────────────────────────────────────────── */
+@keyframes checkIn {
+  from { transform: scale(0) rotate(-15deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0deg);   opacity: 1; }
+}
+.anim-check-in {
+  animation: checkIn 0.2s var(--ease-out-quint) both;
+}
+
+/* ── Number count-up shimmer (decorative underline pulse) ─────────────── */
+@keyframes numReveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.anim-num-reveal {
+  animation: numReveal 0.5s var(--ease-out-quint) both;
+}
+
+/* ── Calendar cell stagger ────────────────────────────────────────────── */
+@keyframes cellFadeIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.anim-cell {
+  animation: cellFadeIn 0.28s var(--ease-out-quint) both;
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-up,
+  .anim-float,
+  .anim-save-success,
+  .anim-bristol-selected,
+  .anim-check-in,
+  .anim-num-reveal,
+  .anim-cell {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .walk-expand,
+  .treat-reveal {
+    transition: none !important;
+  }
+  .icon-fill-anim {
+    transition: none !important;
+  }
+}

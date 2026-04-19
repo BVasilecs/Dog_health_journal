@@ -87,14 +87,14 @@ export default function CalendarScreen() {
             ))}
           </div>
 
-          {/* Day cells */}
-          <div className="grid grid-cols-7 gap-1">
+          {/* Day cells — keyed to month so cells re-animate on navigation */}
+          <div key={format(viewDate, 'yyyy-MM')} className="grid grid-cols-7 gap-1">
             {/* Leading empty cells */}
             {Array.from({ length: leadingEmpties }).map((_, i) => (
               <div key={`e${i}`} />
             ))}
 
-            {days.map(day => {
+            {days.map((day, index) => {
               const dateStr = format(day, 'yyyy-MM-dd')
               const status = getDayStatus(dateStr, state.entries)
               const today = isToday(day)
@@ -104,11 +104,12 @@ export default function CalendarScreen() {
                 <button
                   key={dateStr}
                   onClick={() => setSelectedDate(selected ? null : dateStr)}
-                  className={`relative aspect-square flex flex-col items-center justify-center rounded-full transition-all active:scale-90
+                  className={`anim-cell relative aspect-square flex flex-col items-center justify-center rounded-full transition-all active:scale-90
                     ${selected ? 'ring-2 ring-primary ring-offset-1' : ''}
                     ${today ? 'ring-2 ring-offset-1 ring-primary/50' : ''}`}
                   style={{
                     backgroundColor: status ? statusBg(status) : '#fbf9f5',
+                    animationDelay: `${(leadingEmpties + index) * 18}ms`,
                   }}
                 >
                   <span

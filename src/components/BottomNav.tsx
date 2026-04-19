@@ -28,7 +28,7 @@ export default function BottomNav() {
                 : 'text-on-surface-variant hover:bg-surface-container-low'}`}
           >
             <span
-              className={`material-symbols-outlined text-[24px] ${active ? 'icon-fill' : ''}`}
+              className={`material-symbols-outlined icon-fill-anim text-[24px] ${active ? 'icon-fill' : ''}`}
             >
               {tab.icon}
             </span>

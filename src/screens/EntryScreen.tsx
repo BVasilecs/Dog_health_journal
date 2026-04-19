@@ -55,7 +55,7 @@ function WalkSection({
   }
 
   return (
-    <div className={`rounded-2xl overflow-hidden transition-all ${walk.occurred ? 'bg-surface-container ring-1 ring-outline-variant/30 shadow-card' : 'bg-surface-container-low'}`}>
+    <div className={`rounded-2xl overflow-hidden transition-all duration-300 ${walk.occurred ? 'bg-surface-container ring-1 ring-outline-variant/30 shadow-card' : 'bg-surface-container-low'}`}>
       {/* Walk header */}
       <div className="flex items-center gap-3 p-4">
         <span className="text-2xl select-none">{meta.icon}</span>
@@ -78,90 +78,92 @@ function WalkSection({
         </div>
       </div>
 
-      {/* Details — shown only if occurred */}
-      {walk.occurred && (
-        <div className="px-4 pb-4 flex flex-col gap-4 border-t border-outline-variant/20 pt-4">
+      {/* Details — smooth expand/collapse via grid-template-rows */}
+      <div className="walk-expand" data-open={walk.occurred ? 'true' : 'false'}>
+        <div className="overflow-hidden">
+          <div className="px-4 pb-4 flex flex-col gap-4 border-t border-outline-variant/20 pt-4">
 
-          {/* Bristol Scale */}
-          <div className="flex flex-col gap-2">
-            <p className="font-label text-[10px] font-semibold text-secondary uppercase tracking-wide">Шкала Бристоль</p>
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 snap-x">
-              {([1,2,3,4,5,6,7] as const).map(n => {
-                const selected = walk.bristolScale === n
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => patch('bristolScale', selected ? null : n)}
-                    className={`snap-start shrink-0 w-[4.2rem] flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl transition-all
-                      ${selected ? 'bg-primary-fixed shadow-card' : 'bg-surface-container hover:bg-surface-container-high'}`}
-                  >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center
-                      ${selected ? 'bg-surface-container-lowest' : 'bg-surface-container-highest'}`}>
-                      <span className={`font-headline font-bold text-sm ${selected ? 'text-primary' : 'text-on-surface-variant'}`}>{n}</span>
-                    </div>
-                    <span className={`text-[8px] text-center leading-tight px-0.5
-                      ${selected ? 'text-on-primary-fixed-variant font-medium' : 'text-on-surface-variant'}`}>
-                      {BRISTOL_DESCRIPTIONS[n]}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Color selector */}
-          <div className="flex flex-col gap-2">
-            <p className="font-label text-[10px] font-semibold text-secondary uppercase tracking-wide">Цвет</p>
-            <div className="flex items-end w-full">
-              {(Object.entries(STOOL_COLORS) as [keyof typeof STOOL_COLORS, { hex: string; label: string }][]).map(([key, { hex, label }]) => {
-                const selected = walk.color === key
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => patch('color', selected ? null : key as StoolWalk['color'])}
-                    className="flex-1 flex flex-col items-center gap-1"
-                    title={label}
-                  >
-                    <div
-                      className="w-8 h-8 rounded-full shadow-card transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
-                      style={{
-                        backgroundColor: hex,
-                        outline: selected ? `3px solid ${hex}` : 'none',
-                        outlineOffset: 3,
-                      }}
+            {/* Bristol Scale */}
+            <div className="flex flex-col gap-2">
+              <p className="font-label text-[10px] font-semibold text-secondary uppercase tracking-wide">Шкала Бристоль</p>
+              <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 snap-x">
+                {([1,2,3,4,5,6,7] as const).map(n => {
+                  const selected = walk.bristolScale === n
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => patch('bristolScale', selected ? null : n)}
+                      className={`snap-start shrink-0 w-[4.2rem] flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl transition-colors
+                        ${selected ? 'anim-bristol-selected bg-primary-fixed shadow-card scale-[1.04]' : 'bg-surface-container hover:bg-surface-container-high'}`}
                     >
-                      {selected && <span className="material-symbols-outlined text-white text-[16px] icon-fill">check</span>}
-                    </div>
-                    <span className="font-label text-[8px] text-on-surface-variant">{label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Condition toggles */}
-          <div className="flex flex-col gap-2.5 pt-2 border-t border-outline-variant/15">
-            {([
-              { key: 'mucus',        label: 'Слизь',          color: '#e68570' },
-              { key: 'strongSmell',  label: 'Сильный запах',  color: '#85530d' },
-              { key: 'visibleBlood', label: 'Видимая кровь',  color: '#ba1a1a' },
-            ] as { key: keyof StoolWalk; label: string; color: string }[]).map(({ key, label, color }) => (
-              <div key={key} className="flex items-center justify-between">
-                <span className={`font-label text-sm font-medium ${key === 'visibleBlood' ? 'text-error' : 'text-on-surface'}`}>
-                  {label}
-                </span>
-                <Toggle
-                  checked={walk[key] as boolean}
-                  onChange={v => patch(key, v)}
-                  colorOn={color}
-                />
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center
+                        ${selected ? 'bg-surface-container-lowest' : 'bg-surface-container-highest'}`}>
+                        <span className={`font-headline font-bold text-sm ${selected ? 'text-primary' : 'text-on-surface-variant'}`}>{n}</span>
+                      </div>
+                      <span className={`text-[8px] text-center leading-tight px-0.5
+                        ${selected ? 'text-on-primary-fixed-variant font-medium' : 'text-on-surface-variant'}`}>
+                        {BRISTOL_DESCRIPTIONS[n]}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
-            ))}
+            </div>
+
+            {/* Color selector */}
+            <div className="flex flex-col gap-2">
+              <p className="font-label text-[10px] font-semibold text-secondary uppercase tracking-wide">Цвет</p>
+              <div className="flex items-end w-full">
+                {(Object.entries(STOOL_COLORS) as [keyof typeof STOOL_COLORS, { hex: string; label: string }][]).map(([key, { hex, label }]) => {
+                  const selected = walk.color === key
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => patch('color', selected ? null : key as StoolWalk['color'])}
+                      className="flex-1 flex flex-col items-center gap-1"
+                      title={label}
+                    >
+                      <div
+                        className="w-8 h-8 rounded-full shadow-card transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
+                        style={{
+                          backgroundColor: hex,
+                          outline: selected ? `3px solid ${hex}` : 'none',
+                          outlineOffset: 3,
+                        }}
+                      >
+                        {selected && <span className="material-symbols-outlined anim-check-in text-white text-[16px] icon-fill">check</span>}
+                      </div>
+                      <span className="font-label text-[8px] text-on-surface-variant">{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Condition toggles */}
+            <div className="flex flex-col gap-2.5 pt-2 border-t border-outline-variant/15">
+              {([
+                { key: 'mucus',        label: 'Слизь',          color: '#e68570' },
+                { key: 'strongSmell',  label: 'Сильный запах',  color: '#85530d' },
+                { key: 'visibleBlood', label: 'Видимая кровь',  color: '#ba1a1a' },
+              ] as { key: keyof StoolWalk; label: string; color: string }[]).map(({ key, label, color }) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span className={`font-label text-sm font-medium ${key === 'visibleBlood' ? 'text-error' : 'text-on-surface'}`}>
+                    {label}
+                  </span>
+                  <Toggle
+                    checked={walk[key] as boolean}
+                    onChange={v => patch(key, v)}
+                    colorOn={color}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -209,6 +211,7 @@ export default function EntryScreen() {
 
   const [form, setForm] = useState<DiaryEntry>(() => existing ?? buildBlankEntry(date))
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [savePulse, setSavePulse] = useState(false)
   const cameraRef = useRef<HTMLInputElement>(null)
   const galleryRef = useRef<HTMLInputElement>(null)
 
@@ -245,9 +248,12 @@ export default function EntryScreen() {
   }
 
   function handleSave() {
-    if (existing) dispatch({ type: 'UPDATE_ENTRY', payload: form })
-    else dispatch({ type: 'ADD_ENTRY', payload: form })
-    dispatch({ type: 'CLOSE_ENTRY' })
+    setSavePulse(true)
+    setTimeout(() => {
+      if (existing) dispatch({ type: 'UPDATE_ENTRY', payload: form })
+      else dispatch({ type: 'ADD_ENTRY', payload: form })
+      dispatch({ type: 'CLOSE_ENTRY' })
+    }, 320)
   }
 
   function handleDelete() {
@@ -321,7 +327,7 @@ export default function EntryScreen() {
                   className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors
                     ${form.food[fedKey] ? 'bg-primary border-primary' : 'border-outline-variant bg-transparent'}`}
                 >
-                  {form.food[fedKey] && <span className="material-symbols-outlined text-[14px] text-on-primary icon-fill">check</span>}
+                  {form.food[fedKey] && <span className="material-symbols-outlined anim-check-in text-[14px] text-on-primary icon-fill">check</span>}
                 </button>
                 <span className="font-label font-medium text-on-surface flex-1">{label}</span>
                 <div className="flex items-center gap-1.5">
@@ -342,15 +348,17 @@ export default function EntryScreen() {
               </div>
               <Toggle checked={form.food.treatsGiven} onChange={v => patchFood('treatsGiven', v)} colorOn="#85530d" />
             </div>
-            {form.food.treatsGiven && (
-              <input
-                type="text"
-                placeholder="Что именно?"
-                value={form.food.treatDetails}
-                onChange={e => patchFood('treatDetails', e.target.value)}
-                className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed"
-              />
-            )}
+            <div className="treat-reveal" data-open={form.food.treatsGiven ? 'true' : 'false'}>
+              <div className="overflow-hidden">
+                <input
+                  type="text"
+                  placeholder="Что именно?"
+                  value={form.food.treatDetails}
+                  onChange={e => patchFood('treatDetails', e.target.value)}
+                  className="w-full mt-1 bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed"
+                />
+              </div>
+            </div>
           </section>
 
           {/* ════ BEHAVIOR ════ */}
@@ -479,7 +487,7 @@ export default function EntryScreen() {
       >
         <button
           onClick={handleSave}
-          className="w-full max-w-lg bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold text-lg py-4 rounded-full shadow-float hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          className={`w-full max-w-lg bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold text-lg py-4 rounded-full shadow-float hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2${savePulse ? ' anim-save-success' : ''}`}
         >
           <span className="material-symbols-outlined icon-fill text-[22px]">check_circle</span>
           Сохранить запись

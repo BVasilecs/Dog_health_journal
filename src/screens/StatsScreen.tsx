@@ -1,4 +1,22 @@
+import { useEffect, useState } from 'react'
 import { useApp } from '../context/AppContext'
+
+function useCountUp(target: number | null, duration = 900) {
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    if (target === null) { setValue(0); return }
+    const finalTarget = target
+    const start = performance.now()
+    function step(now: number) {
+      const p = Math.min((now - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - p, 4)
+      setValue(parseFloat((eased * finalTarget).toFixed(1)))
+      if (p < 1) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+  }, [target, duration])
+  return value
+}
 import {
   getGoodDayStreak,
   getAverageCycleBetweenBadDays,
@@ -23,6 +41,10 @@ export default function StatsScreen() {
   const lastEpisodes = getLastEpisodes(entries, 5)
   const weeklyData = getWeeklyEpisodeCounts(entries, 8)
 
+  const animStreak = useCountUp(streak)
+  const animAvgCycle = useCountUp(avgCycle)
+  const animEpisodes = useCountUp(episodesThisMonth)
+
   const hasData = entries.length > 0
 
   return (
@@ -36,14 +58,14 @@ export default function StatsScreen() {
 
         {!hasData ? (
           <div className="flex flex-col items-center gap-4 py-16 text-center">
-            <span className="text-7xl select-none opacity-30">📊</span>
+            <span className="anim-float text-7xl select-none opacity-30">📊</span>
             <p className="font-headline font-bold text-xl text-on-surface-variant">Пока нет данных</p>
             <p className="font-body text-sm text-on-surface-variant/70">Добавьте несколько записей,<br/>чтобы увидеть статистику.</p>
           </div>
         ) : (
           <>
             {/* ── Hero metric: avg cycle ── */}
-            <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-ambient relative overflow-hidden">
+            <div className="anim-fade-up delay-0 bg-surface-container-lowest rounded-2xl p-6 shadow-ambient relative overflow-hidden">
               <div className="absolute -right-8 -top-8 opacity-5 pointer-events-none select-none text-primary">
                 <span className="material-symbols-outlined text-[160px] icon-fill">pets</span>
               </div>
@@ -52,8 +74,8 @@ export default function StatsScreen() {
               </p>
               {avgCycle !== null ? (
                 <div className="flex items-baseline gap-2">
-                  <span className="font-headline text-6xl font-extrabold text-secondary-fixed-dim tracking-tighter">
-                    {avgCycle.toFixed(1)}
+                  <span className="anim-num-reveal font-headline text-6xl font-extrabold text-secondary-fixed-dim tracking-tighter">
+                    {animAvgCycle.toFixed(1)}
                   </span>
                   <span className="font-headline text-2xl font-bold text-secondary/70">дней</span>
                 </div>
@@ -65,7 +87,7 @@ export default function StatsScreen() {
             </div>
 
             {/* ── Streak + episodes bento ── */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="anim-fade-up delay-1 grid grid-cols-2 gap-4">
               {/* Streak */}
               <div className="bg-primary-fixed rounded-2xl p-5 flex flex-col justify-between aspect-square relative overflow-hidden">
                 <div className="absolute -bottom-4 -right-4 opacity-20 pointer-events-none select-none">
@@ -76,7 +98,7 @@ export default function StatsScreen() {
                 </div>
                 <div>
                   <p className="font-headline text-sm font-bold text-on-primary-fixed leading-tight">Хороших дней подряд</p>
-                  <p className="font-headline text-5xl font-extrabold text-on-primary-fixed mt-1">{streak}</p>
+                  <p className="anim-num-reveal font-headline text-5xl font-extrabold text-on-primary-fixed mt-1">{Math.round(animStreak)}</p>
                 </div>
               </div>
 
@@ -90,13 +112,13 @@ export default function StatsScreen() {
                 </div>
                 <div>
                   <p className="font-headline text-sm font-bold text-on-surface leading-tight">Эпизодов в этом месяце</p>
-                  <p className="font-headline text-5xl font-extrabold text-tertiary mt-1">{episodesThisMonth}</p>
+                  <p className="anim-num-reveal font-headline text-5xl font-extrabold text-tertiary mt-1">{Math.round(animEpisodes)}</p>
                 </div>
               </div>
             </div>
 
             {/* ── Weekly bar chart ── */}
-            <div className="bg-surface-container-low rounded-2xl p-5 shadow-card flex flex-col gap-4">
+            <div className="anim-fade-up delay-2 bg-surface-container-low rounded-2xl p-5 shadow-card flex flex-col gap-4">
               <div>
                 <h3 className="font-headline font-bold text-base text-on-surface">Эпизоды по неделям</h3>
                 <p className="font-label text-xs text-on-surface-variant">Последние 8 недель</p>
@@ -139,7 +161,7 @@ export default function StatsScreen() {
             </div>
 
             {/* ── Last 5 episodes ── */}
-            <div className="flex flex-col gap-3">
+            <div className="anim-fade-up delay-3 flex flex-col gap-3">
               <h3 className="font-headline font-bold text-base text-on-surface px-1">Последние 5 эпизодов</h3>
               {lastEpisodes.length === 0 ? (
                 <div className="bg-primary-fixed/40 rounded-2xl p-5 text-center">

@@ -56,10 +56,12 @@ const TEXT = '#1b1c1a'
 
 export async function generateVetPDF(opts: ExportOptions): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfMake = (await import('pdfmake/build/pdfmake')) as any
+  const pdfMakeModule = (await import('pdfmake/build/pdfmake')) as any
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfFonts = (await import('pdfmake/build/vfs_fonts')) as any
-  pdfMake.vfs = pdfFonts.pdfMake?.vfs ?? pdfFonts
+  const pdfFontsModule = (await import('pdfmake/build/vfs_fonts')) as any
+  const pdfMake = pdfMakeModule.default ?? pdfMakeModule
+  const pdfFonts = pdfFontsModule.default ?? pdfFontsModule
+  pdfMake.vfs = pdfFonts.pdfMake?.vfs ?? pdfFonts.vfs ?? pdfFonts
 
   const { entries, pet, fromDate, toDate, includePhotos, includeNotes, includeStats } = opts
 
