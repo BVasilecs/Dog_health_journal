@@ -83,7 +83,7 @@ export async function generateVetPDF(opts: ExportOptions): Promise<void> {
 
   const filtered = entries
     .filter(e => e.date >= fromDate && e.date <= toDate)
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .sort((a, b) => b.date.localeCompare(a.date))
 
   let y = MARGIN
 
