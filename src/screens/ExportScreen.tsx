@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { generateVetPDF } from '../utils/pdfExport'
 import { getEntryStatus } from '../utils/status'
 import { format, subDays } from 'date-fns'
 import { ru } from 'date-fns/locale'
+import { DiaryEntry, PetProfile } from '../types'
 
 export default function ExportScreen() {
-  const { state } = useApp()
+  const { state, dispatch } = useApp()
+  const importInputRef = useRef<HTMLInputElement>(null)
+  const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   const todayStr = new Date().toISOString().split('T')[0]
   const thirtyDaysAgo = subDays(new Date(), 30).toISOString().split('T')[0]
@@ -24,6 +27,59 @@ export default function ExportScreen() {
   const mildCount = filtered.length - goodCount - episodeCount
   const withPhotos = filtered.filter(e => e.photoBase64).length
   const withNotes = filtered.filter(e => e.notes.trim()).length
+
+  function handleExportAll() {
+    const payload = {
+      format: 'endzi-health-journal-backup',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      pet: state.pet,
+      entries: state.entries,
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const stamp = new Date().toISOString().split('T')[0]
+    a.download = `endzi-backup-${stamp}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    setImportStatus({ type: 'success', message: 'Резервная копия сохранена' })
+  }
+
+  function handleImportClick() {
+    importInputRef.current?.click()
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const text = await file.text()
+      const parsed = JSON.parse(text)
+      if (!parsed || parsed.format !== 'endzi-health-journal-backup' || !Array.isArray(parsed.entries)) {
+        throw new Error('Неверный формат файла')
+      }
+      const confirmed = window.confirm(
+        `Импортировать ${parsed.entries.length} записей? Текущие данные будут заменены.`
+      )
+      if (!confirmed) {
+        e.target.value = ''
+        return
+      }
+      const entries = parsed.entries as DiaryEntry[]
+      const pet = parsed.pet as PetProfile | undefined
+      dispatch({ type: 'LOAD_ENTRIES', payload: entries })
+      if (pet) dispatch({ type: 'SET_PET', payload: pet })
+      setImportStatus({ type: 'success', message: `Импортировано ${entries.length} записей` })
+    } catch (err) {
+      setImportStatus({ type: 'error', message: err instanceof Error ? err.message : 'Ошибка импорта' })
+    } finally {
+      e.target.value = ''
+    }
+  }
 
   async function handleGenerate() {
     if (filtered.length === 0) return
@@ -198,6 +254,52 @@ export default function ExportScreen() {
             Добавьте записи за выбранный период, чтобы сформировать отчёт
           </p>
         )}
+
+        {/* ── Full backup (export / import) ── */}
+        <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-4">
+          <div>
+            <h2 className="font-headline font-bold text-base text-on-surface">Перенос данных</h2>
+            <p className="font-label text-xs text-on-surface-variant mt-1">
+              Сохраните все записи, фото и настройки в файл и перенесите в другой браузер
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleExportAll}
+              className="w-full py-3.5 rounded-full font-headline font-bold text-base text-on-secondary-container bg-secondary-container flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]"
+            >
+              <span className="material-symbols-outlined text-[20px] icon-fill">download</span>
+              Экспортировать всё
+            </button>
+
+            <button
+              onClick={handleImportClick}
+              className="w-full py-3.5 rounded-full font-headline font-bold text-base text-on-surface bg-surface-container-highest flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-[0.98]"
+            >
+              <span className="material-symbols-outlined text-[20px] icon-fill">upload</span>
+              Импортировать всё
+            </button>
+
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+
+            {importStatus && (
+              <p
+                className={`text-center font-label text-xs ${
+                  importStatus.type === 'success' ? 'text-primary' : 'text-error'
+                }`}
+              >
+                {importStatus.message}
+              </p>
+            )}
+          </div>
+        </section>
       </main>
     </div>
   )
