@@ -5,19 +5,19 @@ interface ToggleProps {
 }
 
 export default function Toggle({ checked, onChange, colorOn }: ToggleProps) {
-  const bgOn = colorOn ?? '#4d644b'
+  const bgOn = colorOn ?? 'var(--color-primary)'
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex-shrink-0 focus:outline-none"
+      className="flex-shrink-0 rounded-full"
       style={{
         width: '3.25rem',
         height: '1.875rem',
         borderRadius: '9999px',
-        backgroundColor: checked ? bgOn : '#e4e2de',
+        backgroundColor: checked ? bgOn : 'var(--color-surface-variant)',
         transition: 'background-color 0.2s',
         position: 'relative',
         cursor: 'pointer',
@@ -32,9 +32,9 @@ export default function Toggle({ checked, onChange, colorOn }: ToggleProps) {
           width: '1.375rem',
           height: '1.375rem',
           borderRadius: '9999px',
-          backgroundColor: '#fff',
+          backgroundColor: '#ffffff',
           boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
-          transition: 'transform 0.2s cubic-bezier(0.34,1.3,0.64,1)',
+          transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       />
     </button>

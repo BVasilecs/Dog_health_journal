@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { getDayStatus, statusBg, statusColor, statusEmoji, statusLabel, getEntryStatus } from '../utils/status'
+import { getDayStatus, statusBgClass, statusColorClass, statusEmoji, statusLabel, getEntryStatus } from '../utils/status'
 import { BRISTOL_DESCRIPTIONS, STOOL_COLORS } from '../types'
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
@@ -46,15 +46,17 @@ export default function CalendarScreen() {
           <div className="flex gap-2">
             <button
               onClick={prev}
-              className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors active:scale-90"
+              aria-label="Предыдущий месяц"
+              className="w-11 h-11 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors active:scale-90"
             >
-              <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chevron_left</span>
             </button>
             <button
               onClick={next}
-              className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors active:scale-90"
+              aria-label="Следующий месяц"
+              className="w-11 h-11 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors active:scale-90"
             >
-              <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">chevron_right</span>
             </button>
           </div>
         </div>
@@ -62,13 +64,13 @@ export default function CalendarScreen() {
         {/* Legend */}
         <div className="flex gap-4 text-xs font-label font-medium text-on-surface-variant flex-wrap mb-2">
           {[
-            { color: '#4d644b', label: 'Норма' },
-            { color: '#ffbc6f', label: 'Симптомы' },
-            { color: '#ba1a1a', label: 'Эпизод' },
-            { color: '#c3c8bf', label: 'Нет данных' },
-          ].map(({ color, label }) => (
+            { dotClass: 'bg-primary',           label: 'Норма' },
+            { dotClass: 'bg-secondary-container', label: 'Симптомы' },
+            { dotClass: 'bg-error',             label: 'Эпизод' },
+            { dotClass: 'bg-outline-variant',   label: 'Нет данных' },
+          ].map(({ dotClass, label }) => (
             <div key={label} className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+              <div className={`w-3 h-3 rounded-full ${dotClass}`} />
               <span>{label}</span>
             </div>
           ))}
@@ -105,24 +107,18 @@ export default function CalendarScreen() {
                   key={dateStr}
                   onClick={() => setSelectedDate(selected ? null : dateStr)}
                   className={`anim-cell relative aspect-square flex flex-col items-center justify-center rounded-full transition-all active:scale-90
+                    ${statusBgClass(status, 'bg-surface')}
                     ${selected ? 'ring-2 ring-primary ring-offset-1' : ''}
                     ${today ? 'ring-2 ring-offset-1 ring-primary/50' : ''}`}
-                  style={{
-                    backgroundColor: status ? statusBg(status) : '#fbf9f5',
-                    animationDelay: `${(leadingEmpties + index) * 18}ms`,
-                  }}
+                  style={{ animationDelay: `${(leadingEmpties + index) * 18}ms` }}
                 >
-                  <span
-                    className="font-label text-sm font-semibold"
-                    style={{ color: status ? statusColor(status) : '#737971' }}
-                  >
+                  <span className={`font-label text-sm font-semibold ${statusColorClass(status, 'text-outline')}`}>
                     {format(day, 'd')}
                   </span>
                   {today && (
-                    <span
-                      className="absolute bottom-1 w-1 h-1 rounded-full"
-                      style={{ backgroundColor: status ? statusColor(status) : '#4d644b' }}
-                    />
+                    <span className={`absolute bottom-1 w-1 h-1 rounded-full ${
+                      status === 'red' ? 'bg-error' : status === 'yellow' ? 'bg-secondary-container' : 'bg-primary'
+                    }`} />
                   )}
                 </button>
               )
@@ -155,12 +151,9 @@ export default function CalendarScreen() {
                   </h2>
                 </div>
                 {selectedStatus && (
-                  <div
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                    style={{ backgroundColor: statusBg(selectedStatus) }}
-                  >
+                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${statusBgClass(selectedStatus)}`}>
                     <span className="text-sm select-none">{statusEmoji(selectedStatus)}</span>
-                    <span className="font-label text-sm font-bold" style={{ color: statusColor(selectedStatus) }}>
+                    <span className={`font-label text-sm font-bold ${statusColorClass(selectedStatus)}`}>
                       {statusLabel(selectedStatus)}
                     </span>
                   </div>

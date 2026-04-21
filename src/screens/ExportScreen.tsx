@@ -289,15 +289,17 @@ export default function ExportScreen() {
               className="hidden"
             />
 
-            {importStatus && (
-              <p
-                className={`text-center font-label text-xs ${
-                  importStatus.type === 'success' ? 'text-primary' : 'text-error'
-                }`}
-              >
-                {importStatus.message}
-              </p>
-            )}
+            <div aria-live="polite" aria-atomic="true">
+              {importStatus && (
+                <p
+                  className={`text-center font-label text-xs ${
+                    importStatus.type === 'success' ? 'text-primary' : 'text-error'
+                  }`}
+                >
+                  {importStatus.message}
+                </p>
+              )}
+            </div>
           </div>
         </section>
       </main>

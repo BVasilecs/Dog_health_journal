@@ -1,5 +1,5 @@
 import { useApp } from '../context/AppContext'
-import { getEntryStatus, statusBg, statusColor, statusEmoji, statusLabel } from '../utils/status'
+import { getEntryStatus, statusBgClass, statusColorClass, statusEmoji, statusLabel } from '../utils/status'
 import { DiaryEntry, BRISTOL_DESCRIPTIONS, STOOL_COLORS } from '../types'
 import { format, subDays, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
@@ -42,12 +42,13 @@ export default function HomeScreen() {
       <header className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between">
         <button
           onClick={() => dispatch({ type: 'OPEN_PET_SETTINGS' })}
+          aria-label={`Профиль ${state.pet.name} — открыть настройки`}
           className="flex items-center gap-3 hover:opacity-80 active:scale-95 transition-all"
         >
           <div className="w-10 h-10 rounded-full overflow-hidden bg-primary-fixed flex items-center justify-center">
             {state.pet.avatarBase64
-              ? <img src={state.pet.avatarBase64} className="w-full h-full object-cover" />
-              : <span className="text-xl select-none">🐾</span>
+              ? <img src={state.pet.avatarBase64} alt={state.pet.name} className="w-full h-full object-cover" />
+              : <span className="text-xl select-none" aria-hidden="true">🐾</span>
             }
           </div>
           <div className="flex items-center gap-1">
@@ -67,8 +68,8 @@ export default function HomeScreen() {
           <div className="flex items-center gap-4 relative">
             <div className="w-20 h-20 rounded-full overflow-hidden bg-primary-fixed flex items-center justify-center shadow-card border-4 border-surface-container-lowest shrink-0">
               {state.pet.avatarBase64
-                ? <img src={state.pet.avatarBase64} className="w-full h-full object-cover" />
-                : <span className="text-5xl select-none">🐶</span>
+                ? <img src={state.pet.avatarBase64} alt={state.pet.name} className="w-full h-full object-cover" />
+                : <span className="text-5xl select-none" aria-hidden="true">🐶</span>
               }
             </div>
             <div>
@@ -84,14 +85,12 @@ export default function HomeScreen() {
 
         {/* ── Today's Status Card ── */}
         <section
-          className="anim-fade-up delay-1 rounded-2xl p-5 shadow-card relative overflow-hidden"
-          style={{ backgroundColor: todayStatus ? statusBg(todayStatus) : '#efeeea' }}
+          className={`anim-fade-up delay-1 rounded-2xl p-5 shadow-card relative overflow-hidden ${statusBgClass(todayStatus)}`}
         >
           <div className="absolute -right-4 -top-4 opacity-10 pointer-events-none select-none">
             <span className="text-[80px]">{todayStatus ? statusEmoji(todayStatus) : '📋'}</span>
           </div>
-          <p className="font-label text-xs font-semibold uppercase tracking-wider mb-2"
-            style={{ color: todayStatus ? statusColor(todayStatus) : '#737971' }}>
+          <p className={`font-label text-xs font-semibold uppercase tracking-wider mb-2 ${statusColorClass(todayStatus, 'text-outline')}`}>
             Сегодня
           </p>
           <div className="flex items-center gap-3">
@@ -148,9 +147,8 @@ export default function HomeScreen() {
                   style={{ animationDelay: `${220 + index * 45}ms` }}
                 >
                   {/* Date blob */}
-                  <div className="shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center"
-                    style={{ backgroundColor: status ? statusBg(status) : '#efeeea' }}>
-                    <span className="font-headline font-bold text-lg leading-none" style={{ color: status ? statusColor(status) : '#737971' }}>
+                  <div className={`shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center ${statusBgClass(status)}`}>
+                    <span className={`font-headline font-bold text-lg leading-none ${statusColorClass(status, 'text-outline')}`}>
                       {dayLabel.split(' ')[0]}
                     </span>
                     <span className="font-label text-[10px] text-on-surface-variant capitalize">{weekday}</span>
@@ -192,8 +190,7 @@ export default function HomeScreen() {
                   </div>
 
                   {/* Status dot */}
-                  <div className="shrink-0 w-3 h-3 rounded-full"
-                    style={{ backgroundColor: status ? statusColor(status) : '#c3c8bf' }} />
+                  <div className={`shrink-0 w-3 h-3 rounded-full ${statusColorClass(status).replace('text-', 'bg-')}`} />
                 </button>
               )
             })

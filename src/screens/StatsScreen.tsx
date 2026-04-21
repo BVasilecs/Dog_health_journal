@@ -24,8 +24,9 @@ import {
   getLastEpisodes,
   getWeeklyEpisodeCounts,
   getEntryStatus,
-  statusColor,
-  statusBg,
+  statusBgClass,
+  statusColorClass,
+  STATUS_HEX,
 } from '../utils/status'
 import { BarChart, Bar, Cell, XAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { format, parseISO } from 'date-fns'
@@ -135,7 +136,7 @@ export default function StatsScreen() {
                     <Tooltip
                       cursor={{ fill: 'rgba(77,100,75,0.06)', radius: 8 }}
                       contentStyle={{
-                        background: '#fff',
+                        background: 'var(--color-surface)',
                         border: 'none',
                         borderRadius: 12,
                         fontSize: 12,
@@ -149,8 +150,8 @@ export default function StatsScreen() {
                         <Cell
                           key={index}
                           fill={
-                            entry.count === 0 ? '#cfeaca' :
-                            entry.status === 'red' ? '#ffdad6' : '#ffddba'
+                            entry.count === 0 ? STATUS_HEX.greenBg :
+                            entry.status === 'red' ? STATUS_HEX.redBg : STATUS_HEX.yellowBg
                           }
                         />
                       ))}
@@ -178,10 +179,7 @@ export default function StatsScreen() {
                       onClick={() => dispatch({ type: 'OPEN_ENTRY', payload: entry.date })}
                       className="flex items-center gap-3 bg-surface-container-lowest rounded-xl px-4 py-3 shadow-card w-full text-left hover:bg-surface-container transition-colors active:scale-[0.98]"
                     >
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: statusBg(status) }}
-                      >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${statusBgClass(status)}`}>
                         <span className="text-lg select-none">
                           {status === 'red' ? '🚨' : '⚠️'}
                         </span>
@@ -199,10 +197,7 @@ export default function StatsScreen() {
                           {[entry.stool.morning, entry.stool.afternoon, entry.stool.evening].some(w => w.mucus) && ' · слизь'}
                         </p>
                       </div>
-                      <div
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: statusColor(status) }}
-                      />
+                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusColorClass(status).replace('text-', 'bg-')}`} />
                     </button>
                   )
                 })

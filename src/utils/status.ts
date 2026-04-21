@@ -52,6 +52,34 @@ export function statusBg(status: EntryStatus | null): string {
   return '#efeeea'
 }
 
+/** Tailwind background class for a status value. Pass a fallback class for the null/no-data case. */
+export function statusBgClass(status: EntryStatus | null, nullClass = 'bg-surface-container'): string {
+  if (status === 'green')  return 'bg-primary-fixed'
+  if (status === 'red')    return 'bg-error-container'
+  if (status === 'yellow') return 'bg-secondary-fixed'
+  return nullClass
+}
+
+/** Tailwind text-color class for a status value. Pass a fallback class for the null/no-data case. */
+export function statusColorClass(status: EntryStatus | null, nullClass = 'text-outline-variant'): string {
+  if (status === 'green')  return 'text-primary'
+  if (status === 'red')    return 'text-error'
+  if (status === 'yellow') return 'text-secondary'
+  return nullClass
+}
+
+/** Raw hex values for non-CSS contexts (SVG fill, Recharts Cell, canvas). Mirror the Tailwind tokens. */
+export const STATUS_HEX = {
+  greenBg:   '#cfeaca',  // primary-fixed
+  redBg:     '#ffdad6',  // error-container
+  yellowBg:  '#ffddba',  // secondary-fixed
+  neutralBg: '#efeeea',  // surface-container
+  green:     '#4d644b',  // primary
+  red:       '#ba1a1a',  // error
+  yellow:    '#ffbc6f',  // secondary-container
+  neutral:   '#c3c8bf',  // outline-variant
+} as const
+
 export function statusEmoji(status: EntryStatus | null): string {
   if (status === 'green') return '✅'
   if (status === 'red') return '🚨'

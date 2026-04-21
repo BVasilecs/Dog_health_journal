@@ -191,8 +191,8 @@ export default function PetSettingsScreen() {
               >
                 <div className="w-24 h-24 rounded-full overflow-hidden bg-primary-fixed flex items-center justify-center shadow-card border-4 border-surface-container-lowest">
                   {form.avatarBase64
-                    ? <img src={form.avatarBase64} className="w-full h-full object-cover" />
-                    : <span className="text-5xl select-none">🐶</span>
+                    ? <img src={form.avatarBase64} alt="Фото питомца" className="w-full h-full object-cover" />
+                    : <span className="text-5xl select-none" aria-hidden="true">🐶</span>
                   }
                 </div>
                 {/* Hover overlay */}
@@ -233,7 +233,7 @@ export default function PetSettingsScreen() {
               value={form.name}
               onChange={e => patch('name', e.target.value)}
               placeholder="Имя питомца"
-              className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed"
+              className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-base text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed"
             />
           </section>
 
@@ -246,7 +246,7 @@ export default function PetSettingsScreen() {
                 if (e.target.value !== 'Другая порода') patch('breed', e.target.value)
                 else patch('breed', '')
               }}
-              className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-fixed appearance-none"
+              className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-base text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-fixed appearance-none"
             >
               {POPULAR_BREEDS.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
@@ -256,7 +256,7 @@ export default function PetSettingsScreen() {
                 value={form.breed}
                 onChange={e => patch('breed', e.target.value)}
                 placeholder="Введите породу"
-                className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed"
+                className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-base text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed"
               />
             )}
           </section>
@@ -268,7 +268,7 @@ export default function PetSettingsScreen() {
               type="date"
               value={form.birthday}
               onChange={e => patch('birthday', e.target.value)}
-              className="w-full min-w-0 box-border bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-fixed appearance-none"
+              className="w-full min-w-0 box-border bg-surface-container-highest rounded-xl px-4 py-3 font-body text-base text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-fixed appearance-none"
             />
           </section>
 
@@ -280,7 +280,7 @@ export default function PetSettingsScreen() {
               value={form.food}
               onChange={e => patch('food', e.target.value)}
               placeholder="Название корма"
-              className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed"
+              className="w-full bg-surface-container-highest rounded-xl px-4 py-3 font-body text-base text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed"
             />
           </section>
 
@@ -292,7 +292,7 @@ export default function PetSettingsScreen() {
               placeholder="Аллергии, хронические заболевания, особые указания..."
               value={form.vetNotes}
               onChange={e => patch('vetNotes', e.target.value)}
-              className="w-full bg-surface-container-highest rounded-2xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed resize-none"
+              className="w-full bg-surface-container-highest rounded-2xl px-4 py-3 font-body text-base text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed resize-none"
             />
           </section>
 

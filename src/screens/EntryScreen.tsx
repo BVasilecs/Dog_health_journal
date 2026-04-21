@@ -126,16 +126,16 @@ function WalkSection({
                       title={label}
                     >
                       <div
-                        className="w-8 h-8 rounded-full shadow-card transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
+                        className="w-10 h-10 rounded-full shadow-card transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
                         style={{
                           backgroundColor: hex,
                           outline: selected ? `3px solid ${hex}` : 'none',
                           outlineOffset: 3,
                         }}
                       >
-                        {selected && <span className="material-symbols-outlined anim-check-in text-white text-[16px] icon-fill">check</span>}
+                        {selected && <span className="material-symbols-outlined anim-check-in text-white text-[18px] icon-fill">check</span>}
                       </div>
-                      <span className="font-label text-[8px] text-on-surface-variant">{label}</span>
+                      <span className="font-label text-[9px] text-on-surface-variant">{label}</span>
                     </button>
                   )
                 })}
@@ -324,10 +324,10 @@ export default function EntryScreen() {
                 <button
                   type="button"
                   onClick={() => patchFood(fedKey, !(form.food[fedKey] as boolean))}
-                  className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors
+                  className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors
                     ${form.food[fedKey] ? 'bg-primary border-primary' : 'border-outline-variant bg-transparent'}`}
                 >
-                  {form.food[fedKey] && <span className="material-symbols-outlined anim-check-in text-[14px] text-on-primary icon-fill">check</span>}
+                  {form.food[fedKey] && <span className="material-symbols-outlined anim-check-in text-[18px] text-on-primary icon-fill">check</span>}
                 </button>
                 <span className="font-label font-medium text-on-surface flex-1">{label}</span>
                 <div className="flex items-center gap-1.5">
@@ -335,7 +335,7 @@ export default function EntryScreen() {
                     type="time"
                     value={form.food[timeKey] as string}
                     onChange={e => patchFood(timeKey, e.target.value)}
-                    className="bg-surface-container-low px-3 py-1.5 rounded-full font-label text-sm text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary-fixed"
+                    className="bg-surface-container-low px-3 py-1.5 rounded-full font-label text-base text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary-fixed"
                   />
                   <NowBtn onSet={t => patchFood(timeKey, t)} />
                 </div>
@@ -355,7 +355,7 @@ export default function EntryScreen() {
                   placeholder="Что именно?"
                   value={form.food.treatDetails}
                   onChange={e => patchFood('treatDetails', e.target.value)}
-                  className="w-full mt-1 bg-surface-container-highest rounded-xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed"
+                  className="w-full mt-1 bg-surface-container-highest rounded-xl px-4 py-3 font-body text-base text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed"
                 />
               </div>
             </div>
@@ -488,9 +488,10 @@ export default function EntryScreen() {
                 <button
                   type="button"
                   onClick={() => patch('photoBase64', null)}
-                  className="absolute top-2 right-2 w-8 h-8 bg-inverse-surface/70 rounded-full flex items-center justify-center text-inverse-on-surface hover:bg-inverse-surface transition-colors"
+                  aria-label="Удалить фото"
+                  className="absolute top-2 right-2 w-10 h-10 bg-inverse-surface/70 rounded-full flex items-center justify-center text-inverse-on-surface hover:bg-inverse-surface transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[18px]">close</span>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden="true">close</span>
                 </button>
               </div>
             ) : (
@@ -523,7 +524,7 @@ export default function EntryScreen() {
               placeholder="Любые наблюдения..."
               value={form.notes}
               onChange={e => patch('notes', e.target.value)}
-              className="w-full bg-surface-container-highest rounded-2xl px-4 py-3 font-body text-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed resize-none"
+              className="w-full bg-surface-container-highest rounded-2xl px-4 py-3 font-body text-base text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-fixed resize-none"
             />
           </section>
 
