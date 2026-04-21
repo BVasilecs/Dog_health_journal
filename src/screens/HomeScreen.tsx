@@ -4,15 +4,10 @@ import { DiaryEntry, BRISTOL_DESCRIPTIONS, STOOL_COLORS } from '../types'
 import { format, subDays, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
-function bestWalk(entry: DiaryEntry) {
+function worstWalk(entry: DiaryEntry) {
   const walks = [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(w => w.hadStool)
   if (walks.length === 0) return null
-  // Return the walk with the most notable bristol scale (furthest from 4)
-  return walks.reduce((a, b) => {
-    const da = Math.abs((a.bristolScale ?? 4) - 4)
-    const db = Math.abs((b.bristolScale ?? 4) - 4)
-    return db > da ? b : a
-  })
+  return walks.reduce((a, b) => ((b.bristolScale ?? 0) > (a.bristolScale ?? 0) ? b : a))
 }
 
 function anyFlag(entry: DiaryEntry, flag: 'mucus' | 'visibleBlood') {
@@ -106,7 +101,7 @@ export default function HomeScreen() {
                 {todayStatus ? statusLabel(todayStatus) : 'Нет записи'}
               </p>
               {todayEntry && (() => {
-                const w = bestWalk(todayEntry)
+                const w = worstWalk(todayEntry)
                 return w ? (
                   <p className="text-sm text-on-surface-variant mt-0.5">
                     Бристоль {w.bristolScale ?? '—'} · {BRISTOL_DESCRIPTIONS[w.bristolScale ?? 0] ?? ''}
@@ -167,7 +162,7 @@ export default function HomeScreen() {
                       <>
                         <div className="flex items-center gap-2 flex-wrap">
                           {(() => {
-                            const w = bestWalk(entry)
+                            const w = worstWalk(entry)
                             const walksCount = [entry.stool.morning, entry.stool.afternoon, entry.stool.evening].filter(x => x.hadStool).length
                             return (
                               <>
