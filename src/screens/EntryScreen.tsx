@@ -114,7 +114,7 @@ function WalkSection({
             {/* Color selector */}
             <div className="flex flex-col gap-2">
               <p className="font-label text-[10px] font-semibold text-secondary uppercase tracking-wide">Цвет</p>
-              <div className="flex items-end w-full">
+              <div className="flex items-start w-full">
                 {(Object.entries(STOOL_COLORS) as [keyof typeof STOOL_COLORS, { hex: string; label: string }][]).map(([key, { hex, label }]) => {
                   const selected = walk.color === key
                   return (
