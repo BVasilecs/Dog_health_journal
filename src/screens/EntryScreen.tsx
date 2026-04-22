@@ -289,7 +289,7 @@ export default function EntryScreen() {
             <div className="absolute -right-3 -top-3 opacity-5 pointer-events-none select-none">
               <span className="material-symbols-outlined text-[80px] icon-fill">pets</span>
             </div>
-            <h2 className="font-headline text-lg font-bold text-primary mb-4">🫃 Желудок</h2>
+            <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2 mb-4"><span>🫃</span>Желудок</h2>
             <div className="flex items-center justify-between bg-surface-container-low p-4 rounded-xl">
               <div>
                 <p className="font-label font-medium text-on-surface">Урчал живот утром?</p>
@@ -301,7 +301,7 @@ export default function EntryScreen() {
 
           {/* ════ STOOL — 3 WALKS ════ */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
-            <h2 className="font-headline text-lg font-bold text-primary">💩 Стул</h2>
+            <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2"><span>💩</span>Стул</h2>
             {((['morning', 'afternoon', 'evening'] as const)).map(walkKey => (
               <WalkSection
                 key={walkKey}
@@ -314,7 +314,7 @@ export default function EntryScreen() {
 
           {/* ════ FOOD ════ */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-4">
-            <h2 className="font-headline text-lg font-bold text-primary">🍽️ Питание</h2>
+            <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2"><span>🍽️</span>Питание</h2>
             {([
               { fedKey: 'morningFed',   timeKey: 'morningTime',   label: 'Утром' },
               { fedKey: 'afternoonFed', timeKey: 'afternoonTime', label: 'Днём' },
@@ -387,7 +387,7 @@ export default function EntryScreen() {
 
             return (
               <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card">
-                <h2 className="font-headline text-lg font-bold text-primary mb-4">🌙 Ночная пауза</h2>
+                <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2 mb-4"><span>🌙</span>Ночная пауза</h2>
                 {result.kind === 'ok' ? (
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex flex-col items-center gap-1">
@@ -425,7 +425,7 @@ export default function EntryScreen() {
 
           {/* ════ BEHAVIOR ════ */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-5">
-            <h2 className="font-headline text-lg font-bold text-primary">🐾 Поведение</h2>
+            <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2"><span>🐾</span>Поведение</h2>
             <div className="flex flex-col gap-2">
               <p className="font-label text-xs font-semibold text-secondary uppercase tracking-wide">Настроение</p>
               <div className="flex gap-3">
@@ -477,7 +477,7 @@ export default function EntryScreen() {
 
           {/* ════ PHOTO ════ */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
-            <h2 className="font-headline text-lg font-bold text-primary">📸 Фото</h2>
+            <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2"><span>📸</span>Фото</h2>
             {/* Camera input */}
             <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
             {/* Gallery input — no capture attribute so iOS shows the full picker */}
@@ -518,7 +518,7 @@ export default function EntryScreen() {
 
           {/* ════ NOTES ════ */}
           <section className="bg-surface-container-lowest rounded-2xl p-5 shadow-card flex flex-col gap-3">
-            <h2 className="font-headline text-lg font-bold text-primary">📝 Заметки</h2>
+            <h2 className="font-headline text-lg font-bold text-primary flex items-center gap-2"><span>📝</span>Заметки</h2>
             <textarea
               rows={4}
               placeholder="Любые наблюдения..."
