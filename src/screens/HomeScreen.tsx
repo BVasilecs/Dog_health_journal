@@ -1,6 +1,6 @@
-import { useApp } from '../context/AppContext'
+import { useApp, buildBlankEntry } from '../context/AppContext'
 import { getEntryStatus, statusBgClass, statusColorClass, statusEmoji, statusLabel } from '../utils/status'
-import { DiaryEntry, BRISTOL_DESCRIPTIONS, STOOL_COLORS } from '../types'
+import { DiaryEntry, StoolWalk, BRISTOL_DESCRIPTIONS, STOOL_COLORS } from '../types'
 import { format, subDays, parseISO } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
@@ -32,6 +32,37 @@ export default function HomeScreen() {
 
   function openEntry(date: string) {
     dispatch({ type: 'OPEN_ENTRY', payload: date })
+  }
+
+  function nowTime() {
+    const n = new Date()
+    return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`
+  }
+
+  function quickLogStool(period: 'morning' | 'afternoon' | 'evening') {
+    const walk: StoolWalk = {
+      time: nowTime(), hadStool: true,
+      bristolScale: 2, color: 'brown',
+      mucus: false, strongSmell: false, visibleBlood: false,
+    }
+    if (todayEntry) {
+      dispatch({ type: 'UPDATE_ENTRY', payload: { ...todayEntry, stool: { ...todayEntry.stool, [period]: walk } } })
+    } else {
+      const entry = buildBlankEntry(todayStr)
+      dispatch({ type: 'ADD_ENTRY', payload: { ...entry, stool: { ...entry.stool, [period]: walk } } })
+    }
+  }
+
+  function quickLogMeal(period: 'morning' | 'afternoon' | 'evening') {
+    const t = nowTime()
+    const fedKey  = period === 'morning' ? 'morningFed'   : period === 'afternoon' ? 'afternoonFed'   : 'eveningFed'
+    const timeKey = period === 'morning' ? 'morningTime'  : period === 'afternoon' ? 'afternoonTime'  : 'eveningTime'
+    if (todayEntry) {
+      dispatch({ type: 'UPDATE_ENTRY', payload: { ...todayEntry, food: { ...todayEntry.food, [fedKey]: true, [timeKey]: t } } })
+    } else {
+      const entry = buildBlankEntry(todayStr)
+      dispatch({ type: 'ADD_ENTRY', payload: { ...entry, food: { ...entry.food, [fedKey]: true, [timeKey]: t } } })
+    }
   }
 
   const todayLabel = format(new Date(), "d MMMM yyyy", { locale: ru })
@@ -111,10 +142,68 @@ export default function HomeScreen() {
           </div>
         </section>
 
+        {/* ── Quick Log ── */}
+        <section className="anim-fade-up delay-2 bg-surface-container-lowest rounded-2xl p-4 shadow-card flex flex-col gap-3">
+          <p className="font-label text-[10px] font-semibold text-on-surface-variant/60 uppercase tracking-widest">Быстрый ввод</p>
+
+          {/* Stool row */}
+          <div className="grid gap-2" style={{ gridTemplateColumns: '44px 1fr 1fr 1fr' }}>
+            <div className="flex flex-col items-center justify-center rounded-xl bg-surface-container py-2.5 gap-0.5">
+              <span className="text-sm select-none">💩</span>
+              <span className="font-label text-[9px] font-semibold text-on-surface-variant">Стул</span>
+            </div>
+            {(['morning', 'afternoon', 'evening'] as const).map((period, i) => {
+              const icons = ['🌅', '☀️', '🌙']
+              const labels = ['Утро', 'День', 'Вечер']
+              const done = !!todayEntry?.stool[period].hadStool
+              return (
+                <button
+                  key={period}
+                  type="button"
+                  onClick={() => quickLogStool(period)}
+                  className={`py-2.5 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95
+                    ${done ? 'bg-primary-fixed' : 'bg-surface-container hover:bg-surface-container-high'}`}
+                >
+                  <span className="text-sm select-none">{icons[i]}</span>
+                  <span className={`font-label text-[9px] font-semibold ${done ? 'text-primary' : 'text-on-surface-variant'}`}>{labels[i]}</span>
+                  {done && <span className="material-symbols-outlined icon-fill text-primary" style={{ fontSize: 10 }}>check</span>}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Meal row */}
+          <div className="grid gap-2" style={{ gridTemplateColumns: '44px 1fr 1fr 1fr' }}>
+            <div className="flex flex-col items-center justify-center rounded-xl bg-surface-container py-2.5 gap-0.5">
+              <span className="text-sm select-none">🍽️</span>
+              <span className="font-label text-[9px] font-semibold text-on-surface-variant">Еда</span>
+            </div>
+            {(['morning', 'afternoon', 'evening'] as const).map((period, i) => {
+              const icons = ['🌅', '☀️', '🌙']
+              const labels = ['Завтрак', 'Обед', 'Ужин']
+              const fedKeys = ['morningFed', 'afternoonFed', 'eveningFed'] as const
+              const done = !!todayEntry?.food[fedKeys[i]]
+              return (
+                <button
+                  key={period}
+                  type="button"
+                  onClick={() => quickLogMeal(period)}
+                  className={`py-2.5 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95
+                    ${done ? 'bg-secondary-fixed' : 'bg-surface-container hover:bg-surface-container-high'}`}
+                >
+                  <span className="text-sm select-none">{icons[i]}</span>
+                  <span className={`font-label text-[9px] font-semibold ${done ? 'text-secondary' : 'text-on-surface-variant'}`}>{labels[i]}</span>
+                  {done && <span className="material-symbols-outlined icon-fill text-secondary" style={{ fontSize: 10 }}>check</span>}
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
         {/* ── Add / Edit Button ── */}
         <button
           onClick={() => openEntry(todayStr)}
-          className="anim-fade-up delay-2 w-full py-4 rounded-full font-headline font-bold text-lg text-on-primary shadow-float
+          className="anim-fade-up delay-3 w-full py-4 rounded-full font-headline font-bold text-lg text-on-primary shadow-float
             bg-gradient-to-r from-primary to-primary-container
             hover:opacity-90 active:scale-[0.97] transition-all duration-200 flex items-center justify-center gap-2"
         >
@@ -125,7 +214,7 @@ export default function HomeScreen() {
         </button>
 
         {/* ── Recent Entries ── */}
-        <section className="anim-fade-up delay-3 flex flex-col gap-3">
+        <section className="anim-fade-up delay-4 flex flex-col gap-3">
           <h3 className="font-headline font-bold text-xl text-on-surface px-1">Последние 7 дней</h3>
 
           {recentDays.every(d => !d.entry) ? (
