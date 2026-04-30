@@ -143,60 +143,64 @@ export default function HomeScreen() {
         </section>
 
         {/* ── Quick Log ── */}
-        <section className="anim-fade-up delay-2 bg-surface-container-lowest rounded-2xl p-4 shadow-card flex flex-col gap-3">
-          <p className="font-label text-[10px] font-semibold text-on-surface-variant/60 uppercase tracking-widest">Быстрый ввод</p>
+        <section className="anim-fade-up delay-2 flex flex-col gap-2">
+          <p className="font-label text-[10px] font-semibold text-on-surface-variant/60 uppercase tracking-widest px-1">Быстрый ввод</p>
 
-          {/* Stool row */}
-          <div className="grid gap-2" style={{ gridTemplateColumns: '44px 1fr 1fr 1fr' }}>
-            <div className="flex flex-col items-center justify-center rounded-xl bg-surface-container py-2.5 gap-0.5">
+          {/* ── Stool sub-block ── */}
+          <div className="bg-surface-container-lowest rounded-2xl p-3 shadow-card flex flex-col gap-2">
+            <div className="flex items-center gap-1.5 px-0.5">
               <span className="text-sm select-none">💩</span>
-              <span className="font-label text-[9px] font-semibold text-on-surface-variant">Стул</span>
+              <span className="font-label text-xs font-semibold text-on-surface-variant">Стул</span>
             </div>
-            {(['morning', 'afternoon', 'evening'] as const).map((period, i) => {
-              const icons = ['🌅', '☀️', '🌙']
-              const labels = ['Утро', 'День', 'Вечер']
-              const done = !!todayEntry?.stool[period].hadStool
-              return (
-                <button
-                  key={period}
-                  type="button"
-                  onClick={() => quickLogStool(period)}
-                  className={`py-2.5 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95
-                    ${done ? 'bg-primary-fixed' : 'bg-surface-container hover:bg-surface-container-high'}`}
-                >
-                  <span className="text-sm select-none">{icons[i]}</span>
-                  <span className={`font-label text-[9px] font-semibold ${done ? 'text-primary' : 'text-on-surface-variant'}`}>{labels[i]}</span>
-                  {done && <span className="material-symbols-outlined icon-fill text-primary" style={{ fontSize: 10 }}>check</span>}
-                </button>
-              )
-            })}
+            <div className="grid grid-cols-3 gap-2">
+              {(['morning', 'afternoon', 'evening'] as const).map((period, i) => {
+                const icons = ['🌅', '☀️', '🌙']
+                const labels = ['Утро', 'День', 'Вечер']
+                const done = !!todayEntry?.stool[period].hadStool
+                return (
+                  <button
+                    key={period}
+                    type="button"
+                    onClick={() => quickLogStool(period)}
+                    className={`py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95
+                      ${done ? 'bg-primary-fixed' : 'bg-surface-container hover:bg-surface-container-high'}`}
+                  >
+                    <span className="text-base select-none">{icons[i]}</span>
+                    <span className={`font-label text-[10px] font-semibold ${done ? 'text-primary' : 'text-on-surface-variant'}`}>{labels[i]}</span>
+                    {done && <span className="material-symbols-outlined icon-fill text-primary" style={{ fontSize: 11 }}>check</span>}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
-          {/* Meal row */}
-          <div className="grid gap-2" style={{ gridTemplateColumns: '44px 1fr 1fr 1fr' }}>
-            <div className="flex flex-col items-center justify-center rounded-xl bg-surface-container py-2.5 gap-0.5">
+          {/* ── Meal sub-block ── */}
+          <div className="bg-surface-container-lowest rounded-2xl p-3 shadow-card flex flex-col gap-2">
+            <div className="flex items-center gap-1.5 px-0.5">
               <span className="text-sm select-none">🍽️</span>
-              <span className="font-label text-[9px] font-semibold text-on-surface-variant">Еда</span>
+              <span className="font-label text-xs font-semibold text-on-surface-variant">Питание</span>
             </div>
-            {(['morning', 'afternoon', 'evening'] as const).map((period, i) => {
-              const icons = ['🌅', '☀️', '🌙']
-              const labels = ['Завтрак', 'Обед', 'Ужин']
-              const fedKeys = ['morningFed', 'afternoonFed', 'eveningFed'] as const
-              const done = !!todayEntry?.food[fedKeys[i]]
-              return (
-                <button
-                  key={period}
-                  type="button"
-                  onClick={() => quickLogMeal(period)}
-                  className={`py-2.5 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95
-                    ${done ? 'bg-secondary-fixed' : 'bg-surface-container hover:bg-surface-container-high'}`}
-                >
-                  <span className="text-sm select-none">{icons[i]}</span>
-                  <span className={`font-label text-[9px] font-semibold ${done ? 'text-secondary' : 'text-on-surface-variant'}`}>{labels[i]}</span>
-                  {done && <span className="material-symbols-outlined icon-fill text-secondary" style={{ fontSize: 10 }}>check</span>}
-                </button>
-              )
-            })}
+            <div className="grid grid-cols-3 gap-2">
+              {(['morning', 'afternoon', 'evening'] as const).map((period, i) => {
+                const icons = ['🌅', '☀️', '🌙']
+                const labels = ['Завтрак', 'Обед', 'Ужин']
+                const fedKeys = ['morningFed', 'afternoonFed', 'eveningFed'] as const
+                const done = !!todayEntry?.food[fedKeys[i]]
+                return (
+                  <button
+                    key={period}
+                    type="button"
+                    onClick={() => quickLogMeal(period)}
+                    className={`py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95
+                      ${done ? 'bg-secondary-fixed' : 'bg-surface-container hover:bg-surface-container-high'}`}
+                  >
+                    <span className="text-base select-none">{icons[i]}</span>
+                    <span className={`font-label text-[10px] font-semibold ${done ? 'text-secondary' : 'text-on-surface-variant'}`}>{labels[i]}</span>
+                    {done && <span className="material-symbols-outlined icon-fill text-secondary" style={{ fontSize: 11 }}>check</span>}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </section>
 
